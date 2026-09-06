@@ -1,0 +1,9 @@
+# mpv runtime cache (shader/icc caches, remote-control pid/lock)
+portable_config/cache/
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# mpv log
+portable_config/LOG.txt
