@@ -3,10 +3,14 @@
  * @description Enumerate whatever page is currently open (board rows / library /
  *              search results / episode list / stream list) into plain objects the
  *              phone can render. Never navigates on its own.
- * @version 1.1.3
+ * @version 1.1.4
  * @author allecsc / Stremio Kai
  *
  * @changelog
+ *   1.1.4 - Browse season stepper: seasonInfo() returns the "Season N" label
+ *           (never the prev/next button text) + prev/next availability; episode
+ *           number also parsed from the title. Other seasons sit behind a closed
+ *           popup, so there is no list to enumerate.
  *   1.1.3 - cap streamList (80) + episodeRows (400): debrid addons list 100s of
  *           results and the whole list rode in every SSE frame (~640 KB seen).
  *   1.1.2 - `_debug` emitted only when the route's expected list came back empty.
@@ -140,7 +144,45 @@
       return scrapeContainer(container).slice(0, 120);
     },
 
-    episodeRows() {
+    // { label: "Season 29", active: 29|null, hasPrev, hasNext }
+    // Stremio shows one season at a time; other seasons are behind a closed popup.
+    seasonInfo(routeSeason) {
+      const bar = document.querySelector(SEL().seasonsBar);
+      if (!bar) return null;
+      const dis = (el) => !el || el.disabled || /disabled/i.test(el.className) || el.getAttribute("aria-disabled") === "true";
+      const prev = bar.querySelector(SEL().seasonPrev);
+      const next = bar.querySelector(SEL().seasonNext);
+
+      // The label: the dedicated popup-label, else the first descendant whose
+      // *whole* text reads like a season. Never the prev/next button text.
+      const clean = (s) => (s || "").trim().replace(/\s+/g, " ");
+      const seasonish = (t) => /^(season\s*)?\d{1,3}$/i.test(t) || /^season\s+\d/i.test(t);
+      let curLabel = clean(text(bar, SEL().seasonLabel));
+      if (!seasonish(curLabel)) {
+        curLabel = "";
+        const cands = bar.querySelectorAll("[class*='label-'], span, div");
+        for (let i = 0; i < cands.length; i++) {
+          const t = clean(cands[i].textContent);
+          if (seasonish(t)) { curLabel = t; break; }
+        }
+      }
+      let active = routeSeason != null ? parseInt(routeSeason, 10) : null;
+      if (active == null && curLabel) {
+        const m = curLabel.match(/(\d+)/);
+        active = m ? parseInt(m[1], 10) : null;
+      }
+
+      // Stremio's other seasons live in a closed popup (multiselect-menu), so
+      // there's no strip to enumerate - the phone uses the prev/next stepper.
+      return {
+        label: curLabel || (active != null ? "Season " + active : "Season"),
+        active: active,
+        hasPrev: !dis(prev),
+        hasNext: !dis(next),
+      };
+    },
+
+    episodeRows(activeSeason) {
       const list = document.querySelector(SEL().videosList);
       if (!list) return [];
       const rows = [];
@@ -151,15 +193,21 @@
       );
       nodes.forEach((row, i) => {
         const label = row.textContent.trim().replace(/\s+/g, " ");
+        const title = text(row, SEL().videoRowTitle) || label.slice(0, 80);
         let season = null,
           episode = null;
         const m =
           label.match(/S\s*(\d+)\s*[·:\s]*E\s*(\d+)/i) ||
           label.match(/(\d+)\s*[x×]\s*(\d+)/);
         if (m) { season = parseInt(m[1], 10); episode = parseInt(m[2], 10); }
+        if (episode == null) {
+          const tm = title.match(/^(\d+)\b/);
+          if (tm) episode = parseInt(tm[1], 10);
+        }
+        if (season == null && activeSeason != null) season = parseInt(activeSeason, 10);
         rows.push({
           label: label.slice(0, 120),
-          title: text(row, SEL().videoRowTitle) || label.slice(0, 80),
+          title: title,
           season: season,
           episode: episode,
           ordinal: i,
@@ -208,7 +256,9 @@
       }
 
       if (route.view === "DETAIL" || route.view === "STREAMS") {
-        out.episodes = this.episodeRows().map(function (r) {
+        out.season = this.seasonInfo(route.season);
+        var activeS = out.season ? out.season.active : route.season;
+        out.episodes = this.episodeRows(activeS).map(function (r) {
           return {
             label: r.label, title: r.title, season: r.season,
             episode: r.episode, ordinal: r.ordinal, watched: r.watched,

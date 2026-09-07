@@ -4,7 +4,12 @@ r"""
 Stremio Kai - Phone Remote server
 =================================
 
-@version 1.0.0
+@version 1.1.0
+@changelog 1.1.0 - gesture-gated player shortcuts (fullscreen, play/pause,
+           sub/audio menu) now inject a real keypress via SendInput into the
+           foregrounded window instead of the webmod's synthetic KeyboardEvent,
+           which has no user activation (fullscreen threw "Permissions check
+           failed"). See COMMANDS.md for the full command-routing map.
 @author  allecsc / Stremio Kai
 @requires Python 3.8+ standard library only (ships as portable_config/../python.exe)
 
@@ -56,6 +61,144 @@ IS_WINDOWS = os.name == "nt"
 HERE = os.path.dirname(os.path.abspath(__file__))
 WEBAPP_DIR = os.path.join(HERE, "webapp")
 
+
+# ---------------------------------------------------------------------------
+#  Foreground the Stremio window (Windows)
+#
+#  Synthetic key events (D-pad arrows, `space`, `f`) that the webmod dispatches
+#  are ignored by Stremio / navigation.js when the window lacks OS input focus.
+#  So before we hand a webmod command to the phone-driven webmod, pull the
+#  Stremio window to the foreground. Best-effort: any failure is swallowed.
+# ---------------------------------------------------------------------------
+
+_win_hwnd = [0]     # cached HWND of the Stremio top-level window
+HOST_PID = [0]      # Stremio Kai process id, from --host-pid (libmpv is in-process)
+
+
+def _find_stremio_hwnd(u32, ctypes, wintypes):
+    """Top-level, visible, sizeable window belonging to the Stremio process.
+    Match by PID (reliable - libmpv runs in-process) with a title fallback."""
+    cached = _win_hwnd[0]
+    if cached and u32.IsWindow(cached):
+        return cached
+
+    want_pid = HOST_PID[0]
+    found = []
+
+    @ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    def _enum(h, _):
+        if not u32.IsWindowVisible(h):
+            return True
+        r = wintypes.RECT()
+        u32.GetWindowRect(h, ctypes.byref(r))
+        if (r.right - r.left) < 200 or (r.bottom - r.top) < 200:
+            return True
+        pid = wintypes.DWORD(0)
+        u32.GetWindowThreadProcessId(h, ctypes.byref(pid))
+        if want_pid and pid.value == want_pid:
+            found.append(h)
+            return False
+        if not want_pid:
+            buf = ctypes.create_unicode_buffer(256)
+            u32.GetWindowTextW(h, buf, 256)
+            t = buf.value or ""
+            if t == "Stremio" or t.startswith("Stremio - ") or t.startswith("Stremio Kai"):
+                found.append(h)
+                return False
+        return True
+
+    u32.EnumWindows(_enum, 0)
+    _win_hwnd[0] = found[0] if found else 0
+    return _win_hwnd[0]
+
+
+def _activate_window():
+    """Bring the Stremio window to the foreground. Returns (activated, was_front)."""
+    if not IS_WINDOWS:
+        return (False, False)
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        u32 = ctypes.WinDLL("user32", use_last_error=True)
+        k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        hwnd = _find_stremio_hwnd(u32, ctypes, wintypes)
+        if not hwnd:
+            return (False, False)
+        if u32.GetForegroundWindow() == hwnd:
+            return (True, True)
+
+        # AttachThreadInput dance: lets a non-foreground process actually win
+        # SetForegroundWindow instead of just flashing the taskbar.
+        fg = u32.GetForegroundWindow()
+        cur_thread = k32.GetCurrentThreadId()
+        fg_thread = wintypes.DWORD(0)
+        if fg:
+            u32.GetWindowThreadProcessId(fg, ctypes.byref(fg_thread))
+        attached = bool(fg_thread.value) and fg_thread.value != cur_thread
+        if attached:
+            u32.AttachThreadInput(fg_thread.value, cur_thread, True)
+        try:
+            u32.ShowWindow(hwnd, 9)          # SW_RESTORE
+            u32.BringWindowToTop(hwnd)
+            u32.SetForegroundWindow(hwnd)
+        finally:
+            if attached:
+                u32.AttachThreadInput(fg_thread.value, cur_thread, False)
+        return (True, False)
+    except Exception:
+        return (False, False)
+
+
+def _send_key(vk):
+    r"""Inject a real key press (down+up) into the foreground window via
+    SendInput. Unlike the webmod's dispatched KeyboardEvent this carries a
+    genuine user gesture, which Stremio's fullscreen toggle requires
+    (`requestFullscreen()` -> "Permissions check failed" without one).
+
+    `_activate_window()` must have run first - SendInput always targets whatever
+    window is currently foreground.
+    """
+    if not IS_WINDOWS:
+        return False
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        u32 = ctypes.WinDLL("user32", use_last_error=True)
+        ULONG_PTR = ctypes.c_size_t
+
+        class KEYBDINPUT(ctypes.Structure):
+            _fields_ = [("wVk", wintypes.WORD), ("wScan", wintypes.WORD),
+                        ("dwFlags", wintypes.DWORD), ("time", wintypes.DWORD),
+                        ("dwExtraInfo", ULONG_PTR)]
+
+        class MOUSEINPUT(ctypes.Structure):  # present only so INPUT is sized right
+            _fields_ = [("dx", wintypes.LONG), ("dy", wintypes.LONG),
+                        ("mouseData", wintypes.DWORD), ("dwFlags", wintypes.DWORD),
+                        ("time", wintypes.DWORD), ("dwExtraInfo", ULONG_PTR)]
+
+        class _IU(ctypes.Union):
+            _fields_ = [("ki", KEYBDINPUT), ("mi", MOUSEINPUT)]
+
+        class INPUT(ctypes.Structure):
+            _anonymous_ = ("u",)
+            _fields_ = [("type", wintypes.DWORD), ("u", _IU)]
+
+        INPUT_KEYBOARD = 1
+        KEYEVENTF_KEYUP = 0x0002
+        scan = u32.MapVirtualKeyW(vk, 0)
+        seq = (INPUT * 2)(
+            INPUT(type=INPUT_KEYBOARD, u=_IU(ki=KEYBDINPUT(vk, scan, 0, 0, 0))),
+            INPUT(type=INPUT_KEYBOARD,
+                  u=_IU(ki=KEYBDINPUT(vk, scan, KEYEVENTF_KEYUP, 0, 0))),
+        )
+        sent = u32.SendInput(2, ctypes.byref(seq), ctypes.sizeof(INPUT))
+        return sent == 2
+    except Exception:
+        return False
+
+
 # Properties we ask mpv to observe. Each maps 1:1 into the state snapshot.
 OBSERVED_PROPERTIES = [
     "pause",
@@ -78,6 +221,7 @@ OBSERVED_PROPERTIES = [
     "eof-reached",
     "core-idle",
     "fullscreen",
+    "panscan",
     "demuxer-cache-state",
 ]
 
@@ -92,9 +236,9 @@ def _clamp(v, lo, hi):
 
 
 MPV_COMMANDS = {
-    # play/pause is a WEBMOD_COMMAND (space to the web player). Toggling `pause`
-    # on the pipe pauses fine but the Stremio web UI owns the state and re-asserts
-    # pause on unpause.
+    # play/pause is a WEBMOD_COMMAND actuated as a real Space keypress (see
+    # REAL_KEY_COMMANDS). Toggling `pause` on the pipe pauses fine but the
+    # Stremio web UI owns the state and re-asserts pause on unpause.
     "set_pause":         lambda a: ["set_property", "pause", bool(a.get("value"))],
     "seek_relative":     lambda a: ["seek", _clamp(a.get("secs", 0), -3600, 3600), "relative"],
     "seek_absolute":     lambda a: ["seek", _clamp(a.get("pos", 0), 0, 1e7), "absolute"],
@@ -113,19 +257,33 @@ MPV_COMMANDS = {
     "chapter_prev":      lambda a: ["add", "chapter", -1],
     "stop_playback":     lambda a: ["stop"],
     "perform_skip":      lambda a: ["script-message-to", "notify_skip", "perform-skip"],
-    "toggle_fullscreen": lambda a: ["cycle", "fullscreen"],
+    # ultrawide zoom: crop to fill (panscan 1.0) <-> fit (0.0). mpv owns this
+    # render property so the pipe is fine; fullscreen is a WEBMOD_COMMAND (the
+    # shell, not mpv, owns the window).
+    "set_panscan":       lambda a: ["set_property", "panscan", _clamp(a.get("value", 0), 0, 1)],
 }
 
 # Commands forwarded to the webmod (things mpv IPC cannot do). Just a whitelist -
 # the webmod knows how to actuate each one.
 WEBMOD_COMMANDS = {
-    "toggle_pause",
+    "toggle_pause", "toggle_fullscreen",
     "nav_dpad", "nav_ok", "nav_back", "nav_home", "nav_page", "nav_hash",
     "player_next_video", "player_prev_video",
     "toggle_subs_menu", "toggle_audio_menu",
     "open_item", "open_details", "open_detail", "open_streams",
-    "pick_episode", "launch_stream",
+    "pick_episode", "season_step", "launch_stream",
     "instant_resume", "search", "refresh_browse",
+}
+
+# Player shortcuts that Stremio's web UI only honours from a real user gesture
+# (fullscreen calls requestFullscreen() and threw "Permissions check failed"
+# from the webmod's synthetic event; play/pause is just more reliable trusted).
+# For these we inject an actual keypress with SendInput into the foregrounded
+# window, and only fall back to the webmod if the injection fails. Values are
+# Win32 virtual-key codes. Keep this to commands the web app actually sends.
+REAL_KEY_COMMANDS = {
+    "toggle_fullscreen": 0x46,  # F
+    "toggle_pause":      0x20,  # Space
 }
 
 
@@ -477,6 +635,7 @@ class StateStore:
                 "eof": mpv.get("eof-reached"),
                 "idle": mpv.get("core-idle"),
                 "fullscreen": mpv.get("fullscreen"),
+                "panscan": mpv.get("panscan"),
                 "buffering_pct": cache.get("cache-duration"),
                 "aid": mpv.get("aid"),
                 "sid": mpv.get("sid"),
@@ -704,7 +863,7 @@ class Handler(BaseHTTPRequestHandler):
             "token_required": bool(self.cfg["token"]),
             "mpv_connected": self.store.pipe_connected(),
             "sse_clients": self.sse_count[0],
-            "version": "1.0.0",
+            "version": "1.1.0",
         })
 
     def _serve_static(self, rel):
@@ -728,14 +887,26 @@ class Handler(BaseHTTPRequestHandler):
 
         if cmd in MPV_COMMANDS:
             view = self.store.route_view()
-            transport_like = cmd not in ("toggle_fullscreen",)
-            if transport_like and view not in (None, "PLAYER") and not self.store.pipe_connected():
+            if view not in (None, "PLAYER") and not self.store.pipe_connected():
                 return self._send_json({"ok": False, "reason": "no playback"})
             arr = MPV_COMMANDS[cmd](args)
             ok, data = self.pipe.send_command(arr, want_result=False)
             return self._send_json({"ok": ok, "detail": data})
 
         if cmd in WEBMOD_COMMANDS:
+            # Synthetic keys the webmod dispatches (D-pad, space, f) are ignored
+            # unless the Stremio window has OS focus - pull it to the front first.
+            activated, was_front = _activate_window()
+            if activated and not was_front:
+                time.sleep(0.10)  # let the OS route focus before the webmod acts
+
+            # Some player shortcuts (fullscreen especially) only work from a
+            # real user gesture. Inject an actual keypress instead of the
+            # webmod's synthetic event; fall through only if injection failed.
+            vk = REAL_KEY_COMMANDS.get(cmd)
+            if vk and activated and _send_key(vk):
+                return self._send_json({"ok": True, "via": "sendkey"})
+
             want_ack = bool(body.get("wait"))
             ok, res = self.webq.push(cmd, args, want_ack=want_ack)
             return self._send_json({"ok": ok, "result": res})
@@ -857,7 +1028,11 @@ def main(argv=None):
     ap.add_argument("--pipe", default="kai-mpv")
     ap.add_argument("--token", default="")
     ap.add_argument("--pidfile", default="")
+    ap.add_argument("--host-pid", type=int, default=0,
+                    help="Stremio Kai process id, for foreground-on-command")
     args = ap.parse_args(argv)
+
+    HOST_PID[0] = getattr(args, "host_pid", 0) or 0
 
     if args.pidfile:
         try:

@@ -1,7 +1,8 @@
 # Phone Remote — rollout & test checklist
 
 **Code status:** Stages 0–6 are fully implemented and ready to test. Stage 7 is
-not built yet.
+not built yet. See **Known issues & further work** at the bottom for what's still
+open (the main one: D-pad grid nav needs a physical click per session).
 
 Checkbox legend:
 - `[x]` verified working
@@ -108,3 +109,75 @@ Play a movie, then from the phone:
 - [ ] Multi-NIC picker in Settings when several addresses exist
 - [ ] `player_prev_video` (currently a no-op — Stremio has no prev control)
 - [ ] Re-verify every selector in `selectors.js` after any `stremio-community-v5` rebase
+
+---
+
+## Known issues & further work
+
+### 1. D-pad grid navigation needs one physical click per session  *(open — biggest gap)*
+
+Off the player, arrow commands from the phone only scroll / don't enter the
+catalogue grid until the user physically clicks the Stremio window once. After
+that, everything works for the rest of the session.
+
+Root cause: `_activate_window()` (`server.py`) foregrounds the top-level window,
+but that gives the WebView2 (Chromium) child neither OS input focus nor
+[transient user activation]. `navigation.js`'s spatial-nav keydown handler and
+React's own focus machinery need the web surface truly focused. `element.click()`
+from a webmod is `isTrusted:false` so JS can't self-fix it.
+
+What was tried this round and **reverted** (didn't hold up):
+- `SendInput` / `PostMessage(WM_LBUTTONDOWN/UP)` synthesized click into the
+  render-widget HWND. The click *did* land and grant focus, but it kept hitting
+  the Stremio logo (`div.logo-container-jteMT`, top-left) → navigation.js routes
+  a logo click to Board, so every command bounced you home. A webmod-provided
+  "safe point" (gap in the top nav bar) was added then also removed.
+- `SetFocus` walking the WebView2 child's parent chain — no visible effect.
+
+What still works and stayed in (`REAL_KEY_COMMANDS` in `server.py`):
+- `toggle_fullscreen`, `toggle_pause` inject a real `SendInput` keystroke after
+  foregrounding. Fullscreen confirmed working from the phone with the window
+  backgrounded (it previously threw `Permissions check failed` because
+  `requestFullscreen()` needs a gesture).
+
+Options not yet tried, roughly in order of preference:
+- [ ] **Route `nav_dpad` through `SendInput` real arrow keys** (like fullscreen).
+      Real trusted arrows + whatever focus the foreground gives may be enough for
+      `navigation.js` to drive the grid. Cheapest next step; never actually tested.
+- [ ] **Synthesized click at a genuinely safe pixel.** Needs a point that
+      navigates nowhere on every route — the nav-bar gap idea was on the right
+      track but flaky; a webmod that reports the rect of a known-inert element
+      each state POST would be more reliable than a hard-coded pixel.
+- [ ] **Fix it in the C++ shell** via `ICoreWebView2Controller::MoveFocus` on
+      window activate. Correct fix, but lives in `Zaarrg/stremio-community-v5`,
+      not this repo.
+
+Diagnostic aid left in place: set `localStorage kai-remote-debug=true` in the
+Stremio DevTools console + reload → `remote-client.js` logs every
+pointer/click/focus event and per-command `hasFocus` / `userActivation` state.
+
+### 2. Orphaned command handlers — decide keep vs. delete
+
+The web app no longer sends these; handlers still exist in `WEBMOD_COMMANDS`
+(`server.py`) and `actuators.js`:
+- [ ] `toggle_subs_menu`, `toggle_audio_menu` — buttons were removed when the
+      player panel moved to `set_sub_track` / `add_sub_delay` etc. Dead unless
+      re-added.
+- [ ] `open_detail`, `open_streams` — superseded by `open_details` / `open_item`.
+      Arguably keep as a generic hash-nav API.
+- [ ] `nav_hash` — no caller; generic, low cost to keep.
+
+### 3. Smaller cleanups
+
+- [ ] `actuators.js` `pick_episode` calls `Scrapers.episodeRows()` with no arg;
+      the scraper now takes `episodeRows(activeSeason)` for season backfill. Pass
+      the active season through.
+- [ ] `actuators.js` `toggle_fullscreen` comment claims the control-bar button
+      needs "no user gesture" — false (that's why fullscreen moved to
+      `SendInput`). It's only the fallback path now; fix the comment.
+- [ ] `actuators.js` logs a hard-coded `"(v1.1.7)"` string — drifts from
+      `@version`.
+- [ ] `stremio-settings.ini` `[Window]` geometry is rewritten by the app on every
+      close — decide whether to keep tracking it or gitignore.
+
+[transient user activation]: https://developer.mozilla.org/en-US/docs/Web/Security/User_activation

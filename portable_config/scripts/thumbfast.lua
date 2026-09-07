@@ -3,6 +3,10 @@
 -- High-performance on-the-fly thumbnailer
 --
 -- Built for easy integration in third-party UIs.
+--
+-- Stremio Kai local patch: the Windows mpv_path block below auto-locates the
+-- standalone mpv.exe that ships at <install>/mpv/mpv.exe (Stremio Kai embeds
+-- libmpv, so there is no mpv on PATH). Re-apply on every thumbfast upgrade.
 
 --[[
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -277,9 +281,55 @@ options.scale_factor = math.floor(options.scale_factor)
 local mpv_path = options.mpv_path
 local frontend_path
 
-if mpv_path == "mpv" and os_name == "windows" then
+if os_name == "windows" then
+    -- Stremio Kai embeds libmpv (no mpv on PATH). A standalone mpv.exe ships at
+    -- <install root>/mpv/mpv.exe. The subprocess CWD is not the install root
+    -- (relative paths in the .conf fail), so resolve it absolutely: walk up from
+    -- this script's dir, and also try the CWD and the frontend exe's directory.
+    local function isfile(p)
+        if not p or p == "" then return false end
+        local i = mp.utils.file_info(p)
+        return i ~= nil and i.is_file
+    end
+    local function dirname(p)
+        return ((p or ""):gsub("\\", "/")):match("^(.*)/[^/]*$") or ""
+    end
     frontend_path = mp.get_property_native("user-data/frontend/process-path")
-    mpv_path = frontend_path or mpv_path
+    local sdir = ((debug.getinfo(1, "S").source:match("@(.*[/\\])") or "./"):gsub("\\", "/"))
+    local cwd = ((mp.utils.getcwd() or "."):gsub("\\", "/"))
+
+    local tries = {}
+    if options.mpv_path ~= "mpv" then
+        table.insert(tries, options.mpv_path)
+        table.insert(tries, mp.command_native({"expand-path", options.mpv_path}))
+    end
+    -- mpv.exe ships as <install root>/mpv/mpv.exe (sibling of stremio.exe).
+    -- Try each plausible base for both "mpv.exe" and "mpv/mpv.exe".
+    local bases = {
+        dirname(frontend_path),
+        cwd,
+        cwd .. "/..",
+        sdir .. "../..",        -- scripts/ -> portable_config/ -> root
+        sdir .. "../../..",
+    }
+    for _, base in ipairs(bases) do
+        if base ~= "" then
+            table.insert(tries, base .. "/mpv/mpv.exe")
+            table.insert(tries, base .. "/mpv.exe")
+        end
+    end
+
+    mpv_path = nil
+    for _, p in ipairs(tries) do
+        if isfile(p) then mpv_path = p break end
+    end
+    if mpv_path then
+        mp.msg.info("thumbfast: using mpv " .. mpv_path)
+    else
+        mp.msg.warn("thumbfast: standalone mpv.exe not found (tried " ..
+            table.concat(tries, " | ") .. ") - set mpv_path in script-opts/thumbfast.conf")
+        mpv_path = options.mpv_path  -- fall through; spawn will report the failure
+    end
 end
 
 if mpv_path == "mpv" and os_name == "darwin" and unique then

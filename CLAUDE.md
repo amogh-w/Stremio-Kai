@@ -107,6 +107,8 @@ fails when `portable_config` is a junction/symlink to a checkout). The C++ shell
 `webmods/Remote/` like other feature folders (confirmed working); if a future build stops, relocate
 those files under `webmods/Utilities/`.
 
+Command routing (the three paths a `POST /cmd` takes - mpv pipe vs. real
+`SendInput` keystroke vs. webmod queue): `portable_config/remote/COMMANDS.md`.
 Manual rollout/test checklist: `portable_config/remote/CHECKLIST.md`.
 
 ## Other webmod groups

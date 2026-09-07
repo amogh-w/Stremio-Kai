@@ -5,8 +5,12 @@
  *              commands, actuates them, and POSTs route + scraped state back.
  *              Also pushes the Settings-UI remote config down to
  *              scripts/remote-control/main.lua via the WebView bridge.
- * @version 1.1.0
- * @changelog 1.1.0 - per-scraper error guards in buildState(); errors surface in
+ * @version 1.2.0
+ * @changelog 1.2.0 - opt-in debug watcher (localStorage kai-remote-debug=true):
+ *            logs every pointer/mouse/click event (isTrusted, target, coords),
+ *            window focus/blur, and per-command focus/userActivation state to
+ *            the Stremio DevTools console - for diagnosing focus/input issues.
+ *   1.1.0 - per-scraper error guards in buildState(); errors surface in
  *            browse._scrapeErrors for phone-side diagnosis.
  * @author allecsc / Stremio Kai
  *
@@ -76,10 +80,73 @@
     sendToMpv("script-message", ["remote-control-restart"]);
   window.KaiRemote.pushConfig = pushConfigToLua;
 
+  // ---- debug: watch synthetic clicks / focus (opt-in) ----------------
+  // Enable from the Stremio DevTools console:
+  //   localStorage.setItem('kai-remote-debug', 'true'); location.reload();
+  // Then press a phone button and watch the console.
+  const DEBUG = localStorage.getItem("kai-remote-debug") === "true";
+  function dbg() {
+    if (DEBUG)
+      console.log.apply(
+        console,
+        ["[Kai Remote DBG]"].concat([].slice.call(arguments)),
+      );
+  }
+  if (DEBUG) {
+    const desc = (el) =>
+      !el || !el.tagName
+        ? String(el)
+        : el.tagName.toLowerCase() +
+          (el.id ? "#" + el.id : "") +
+          (el.className && el.className.baseVal === undefined
+            ? "." + String(el.className).trim().replace(/\s+/g, ".")
+            : "");
+    ["pointerdown", "mousedown", "mouseup", "click", "dblclick"].forEach((t) => {
+      window.addEventListener(
+        t,
+        (e) => {
+          dbg(
+            t,
+            "trusted=" + e.isTrusted,
+            "btn=" + e.button,
+            "@(" + e.clientX + "," + e.clientY + ")",
+            "target=" + desc(e.target),
+          );
+        },
+        true,
+      );
+    });
+    ["focus", "blur"].forEach((t) =>
+      window.addEventListener(t, () =>
+        dbg("window " + t, "hasFocus=" + document.hasFocus()),
+      ),
+    );
+    document.addEventListener("visibilitychange", () =>
+      dbg("visibility=" + document.visibilityState),
+    );
+    dbg(
+      "watcher armed. hasFocus=" + document.hasFocus(),
+      "visibility=" + document.visibilityState,
+    );
+  }
+
   // ---- command execution ----------------------------------------------
   async function runCommand(item) {
     const fn = window.KaiRemote.Actuators[item.cmd];
     let result;
+    if (DEBUG) {
+      const ua = navigator.userActivation || {};
+      dbg(
+        "runCommand",
+        item.cmd,
+        JSON.stringify(item.args || {}),
+        "| hasFocus=" + document.hasFocus(),
+        "activeEl=" +
+          (document.activeElement &&
+            document.activeElement.tagName.toLowerCase()),
+        "userAct(active=" + ua.isActive + ",been=" + ua.hasBeenActive + ")",
+      );
+    }
     if (typeof fn === "function") {
       try {
         result = await fn(item.args || {});

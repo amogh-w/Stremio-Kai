@@ -217,6 +217,9 @@ start_server = function()
         "--pipe", opts.pipe_name,
         "--token", opts.token or "",
         "--pidfile", PIDFILE,
+        -- libmpv runs in-process, so this is the Stremio Kai window's process id;
+        -- server.py uses it to foreground the window before phone key commands.
+        "--host-pid", tostring(utils.getpid()),
     }
     msg.info(string.format("starting remote server: %s:%s  (python=%s)", opts.host, tostring(opts.port), PYTHON_EXE))
 

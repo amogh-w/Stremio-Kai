@@ -153,22 +153,11 @@
   .glabel b { color: var(--muted); font-weight: 600; letter-spacing: .04em; }
   .divider { height: 1px; background: var(--line); border: 0; margin: 2px 0; }
 
-  /* ── transport head (Now Playing hero) ─────────────────────── */
-  .transport { display: flex; flex-direction: column; gap: 10px; }
-  .tc {
-    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
-    font-variant-numeric: tabular-nums;
-    font-weight: 500;
-    font-size: clamp(30px, 11vw, 42px);
-    letter-spacing: -.01em;
-    display: flex; align-items: baseline; gap: 10px;
-    color: var(--text);
-  }
-  body.playing .tc { text-shadow: var(--tc-shadow); }
-  .tc-sep { color: var(--faint); font-size: .6em; }
-  #t-dur { color: var(--faint); font-size: .6em; align-self: center; }
-  .now { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.3; text-wrap: balance; }
-  .now-sub { margin: 0; color: var(--muted); font-size: 13px; }
+  /* ── transport head (Now Playing) ──────────────────────────── */
+  .transport { display: flex; flex-direction: column; gap: 8px; }
+  .now { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.3; text-wrap: balance; }
+  body.playing .now { text-shadow: var(--tc-shadow); }
+  .now-sub { margin: 0 0 4px; color: var(--muted); font-size: 13px; }
 
   /* ── slider ────────────────────────────────────────────────── */
   input[type="range"] {
@@ -203,13 +192,7 @@
     font-size: 11px; color: var(--faint); letter-spacing: .02em;
   }
 
-  /* ── primary transport keys ────────────────────────────────── */
-  .controls-primary {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1.5fr 1fr 1fr;
-    gap: 8px;
-    align-items: stretch;
-  }
+  /* ── transport keys ────────────────────────────────────────── */
   .key {
     border: 1px solid var(--line);
     background: var(--panel);
@@ -230,8 +213,7 @@
   .key.play[data-state="paused"] .i-play { display: block; }
   .key.play:not([data-state]) .i-play { display: block; }
 
-  /* ── wide keys / clusters ──────────────────────────────────── */
-  .cluster { display: flex; gap: 10px; }
+  /* ── wide keys ─────────────────────────────────────────────── */
   .wide-key {
     flex: 1;
     border: 1px solid var(--line);
@@ -271,6 +253,81 @@
     border-radius: 12px;
     padding: 14px 40px 14px 14px;
     font: inherit; color: var(--text);
+  }
+
+  /* ── quick-seek chips ──────────────────────────────────────── */
+  .seek-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .chip {
+    border: 1px solid var(--line); background: var(--panel);
+    border-radius: 11px; padding: 11px 4px;
+    font-size: 13px; font-weight: 500; color: var(--muted);
+    transition: transform .08s ease, background .15s;
+  }
+  .chip:active { transform: scale(.94); background: var(--panel-2); }
+
+  /* ── transport cluster (Stremio left group) ────────────────── */
+  .xport {
+    display: grid;
+    grid-template-columns: auto auto auto 1fr auto;
+    align-items: center; gap: 10px;
+  }
+  .xport .key { padding: 0; }
+  .xport .key.play { width: 62px; height: 52px; }
+  .key.ic {
+    width: 50px; height: 52px;
+    border: 1px solid var(--line); background: var(--panel);
+    border-radius: 14px; color: var(--text);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .08s ease, background .15s, opacity .15s;
+  }
+  .key.ic:active { transform: scale(.92); background: var(--panel-2); }
+  .key.ic svg { width: 22px; height: 22px; }
+  .key.ic:disabled { opacity: .3; }
+  .key.ic .i-mute { display: none; }
+  .key.ic.muted { color: var(--warn); }
+  .key.ic.muted .i-vol { display: none; }
+  .key.ic.muted .i-mute { display: block; }
+  .vpct { font-size: 12px; color: var(--faint); min-width: 40px; text-align: right; }
+  .wide-key.skip { width: 100%; }
+
+  /* ── tool cluster (Stremio right group) ────────────────────── */
+  .tools { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .tool {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    border: 1px solid var(--line); background: var(--panel);
+    border-radius: 12px; padding: 11px 2px 8px;
+    color: var(--muted);
+    transition: background .12s, color .12s;
+  }
+  .tool svg { width: 20px; height: 20px; }
+  .tool span { font-size: 9px; letter-spacing: .03em; text-transform: uppercase; }
+  .tool:active { background: var(--panel-2); }
+  .tool.on { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
+
+  .tool-panel {
+    display: flex; flex-direction: column; gap: 12px;
+    padding: 14px; margin-top: -10px;
+    background: var(--panel-2); border-radius: 14px;
+  }
+  #speed-seg button.on,
+  #btn-uw.on,
+  .stepper button.on { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
+  .stepper {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 11px; color: var(--faint);
+    letter-spacing: .1em; text-transform: uppercase;
+  }
+  .stepper span { flex: 1; }
+  .stepper button {
+    width: 46px; height: 42px;
+    border: 1px solid var(--line); background: var(--panel);
+    border-radius: 10px; font-size: 18px; color: var(--text);
+  }
+  .stepper button:active { background: var(--raise); }
+  .stepper b {
+    color: var(--text); font-weight: 600;
+    font-family: "IBM Plex Mono", monospace; letter-spacing: 0; text-transform: none;
+    min-width: 58px; text-align: center;
   }
 
   /* ── D-pad (Navigate) ──────────────────────────────────────── */
@@ -317,6 +374,16 @@
     transition: transform .08s, background .12s;
   }
   .grid-keys button:active { transform: scale(.96); background: var(--panel-2); }
+
+  /* ── Go-to pages (Stremio sidebar) ─────────────────────────── */
+  .grid-keys.pages button {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 16px 4px 12px;
+    color: var(--muted);
+  }
+  .grid-keys.pages svg { width: 24px; height: 24px; }
+  .grid-keys.pages span { font-size: 12px; font-weight: 600; }
+  .grid-keys.pages button:active { color: var(--text); }
 
   /* ── Browse ────────────────────────────────────────────────── */
   .search {
@@ -404,7 +471,61 @@
   .row .ix {
     font-family: "IBM Plex Mono", monospace; font-size: 12px;
     color: var(--faint); flex: none;
+    min-width: 34px;
   }
+  .row.watched { opacity: .5; }
+
+  /* ── browse loading ────────────────────────────────────────── */
+  #browse-body .list, #browse-body .rail, #browse-body .rail-label {
+    transition: opacity .15s;
+  }
+  #browse-body.busy .list,
+  #browse-body.busy .rail,
+  #browse-body.busy .rail-label { opacity: .3; pointer-events: none; }
+  .loading-bar {
+    height: 2px; margin-bottom: 14px;
+    background: var(--panel-2); border-radius: 2px;
+    overflow: hidden; position: relative;
+  }
+  .loading-bar::after {
+    content: ""; position: absolute; top: 0; height: 100%; width: 40%; left: -40%;
+    background: var(--accent); border-radius: 2px;
+    animation: lbar 1.1s ease-in-out infinite;
+  }
+  @keyframes lbar { 0% { left: -40%; } 100% { left: 100%; } }
+
+  @keyframes shimmer { 100% { transform: translateX(100%); } }
+  .skel { position: relative; overflow: hidden; background: var(--panel-2); border-radius: 10px; }
+  .skel::after {
+    content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--raise) 55%, transparent), transparent);
+    animation: shimmer 1.4s infinite;
+  }
+  .skel-label { height: 12px; width: 120px; margin: 18px 0 12px; }
+  .skel-label:first-child { margin-top: 4px; }
+  .skel-rail { display: flex; gap: 12px; overflow: hidden; }
+  .skel-poster { flex: 0 0 104px; height: 156px; border-radius: 10px; }
+  .skel-row { height: 62px; margin-bottom: 8px; }
+
+  /* ── season switcher ───────────────────────────────────────── */
+  .season-bar {
+    display: flex; align-items: center; justify-content: center;
+    gap: 14px; margin: 14px 0 2px;
+  }
+  .season-bar b {
+    min-width: 110px; text-align: center;
+    font-size: 14px; font-weight: 700; letter-spacing: .02em;
+  }
+  .season-bar button {
+    width: 40px; height: 38px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line); background: var(--panel);
+    border-radius: 10px; font-size: 18px; line-height: 1; color: var(--text);
+    transition: transform .08s, background .12s;
+  }
+  .season-bar button:active { transform: scale(.92); background: var(--panel-2); }
+  .season-bar button:disabled { opacity: .3; }
+
   .empty {
     text-align: center; color: var(--faint);
     padding: 48px 20px; font-size: 13px; line-height: 1.6;
@@ -449,52 +570,117 @@
 <main>
   <!-- ── NOW PLAYING ──────────────────────────────────────────── -->
   <section class="screen active" id="screen-play">
+    <!-- seek row: elapsed · scrubber · remaining -->
     <div class="transport">
-      <div class="tc">
-        <span id="t-cur">0:00</span><span class="tc-sep">/</span><span id="t-dur">0:00</span>
-      </div>
       <p class="now" id="np-title">Nothing playing</p>
       <p class="now-sub" id="np-sub">Start something on the TV, or use Browse.</p>
       <input class="scrubber" id="scrub" type="range" min="0" max="1000" value="0" aria-label="Seek position" />
-      <div class="times mono"><span id="lbl-cur">0:00</span><span id="lbl-rem">0:00</span></div>
+      <div class="times mono"><span id="t-cur">0:00</span><span id="t-dur">0:00</span></div>
     </div>
 
-    <div class="controls-primary">
-      <button class="key mono" data-cmd="seek_relative" data-args='{"secs":-85}'>−85</button>
-      <button class="key mono" data-cmd="seek_relative" data-args='{"secs":-10}'>−10</button>
+    <div class="seek-row">
+      <button class="chip mono" data-cmd="seek_relative" data-args='{"secs":-85}'>−85</button>
+      <button class="chip mono" data-cmd="seek_relative" data-args='{"secs":-10}'>−10</button>
+      <button class="chip mono" data-cmd="seek_relative" data-args='{"secs":10}'>+10</button>
+      <button class="chip mono" data-cmd="seek_relative" data-args='{"secs":85}'>+85</button>
+    </div>
+
+    <!-- transport cluster: play · next · mute + volume  (mirrors Stremio's left group) -->
+    <div class="xport">
       <button class="key play" id="btn-pause" data-cmd="toggle_pause" aria-label="Play or pause">
         <svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
         <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
       </button>
-      <button class="key mono" data-cmd="seek_relative" data-args='{"secs":10}'>+10</button>
-      <button class="key mono" data-cmd="seek_relative" data-args='{"secs":85}'>+85</button>
+      <button class="key ic" id="btn-next" data-cmd="player_next_video" aria-label="Next video">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5l9 7-9 7zM16 5h2.6v14H16z"/></svg>
+      </button>
+      <button class="key ic" id="btn-mute" data-cmd="mute" aria-label="Mute">
+        <svg class="i-vol" viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h3.5L12 19V5L7.5 9z"/><path d="M15.5 8.5a4 4 0 010 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="i-mute" viewBox="0 0 24 24" fill="currentColor"><path d="M4 9v6h3.5L12 19V5L7.5 9z"/><path d="M16 9.5l5 5M21 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <input class="scrubber sm" id="vol" type="range" min="0" max="130" value="50" aria-label="Volume" />
+      <span class="vpct mono" id="vol-val">50%</span>
     </div>
 
-    <div class="cluster">
-      <button class="wide-key" data-cmd="perform_skip">Skip intro / outro</button>
-      <button class="wide-key" id="btn-next" data-cmd="player_next_video">Next episode</button>
-    </div>
+    <button class="wide-key skip" data-cmd="perform_skip">Skip intro / outro</button>
 
     <hr class="divider" />
 
-    <div class="group">
-      <div class="glabel">Volume <b id="vol-val">50%</b></div>
-      <input class="scrubber sm" id="vol" type="range" min="0" max="130" value="50" aria-label="Volume" />
-      <div class="seg">
-        <button data-cmd="mute">Mute</button>
-        <button data-cmd="set_speed" data-args='{"value":1}'>1&times;</button>
-        <button data-cmd="set_speed" data-args='{"value":1.5}'>1.5&times;</button>
-        <button data-cmd="set_speed" data-args='{"value":2}'>2&times;</button>
+    <!-- tool cluster: mirrors Stremio's right group -->
+    <div class="tools">
+      <button class="tool" data-tool="speed" aria-label="Playback speed">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 17.5a9 9 0 1115 0" stroke-linecap="round"/><path d="M12 13.5l4-4" stroke-linecap="round"/></svg>
+        <span>Speed</span>
+      </button>
+      <button class="tool" data-tool="subs" aria-label="Subtitles">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M7 11h3M7 14.5h6M14 11h3M16 14.5h1" stroke-linecap="round"/></svg>
+        <span>Subtitles</span>
+      </button>
+      <button class="tool" data-tool="audio" aria-label="Audio track">
+        <svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="10" width="2.6" height="4" rx="1.3"/><rect x="8" y="6" width="2.6" height="12" rx="1.3"/><rect x="13" y="8.5" width="2.6" height="7" rx="1.3"/><rect x="18" y="4" width="2.6" height="16" rx="1.3"/></svg>
+        <span>Audio</span>
+      </button>
+      <button class="tool" data-tool="episodes" aria-label="Episodes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="3" width="13" height="10" rx="2"/><path d="M3 8.5V19a2 2 0 002 2h10.5" stroke-linecap="round"/></svg>
+        <span>Episodes</span>
+      </button>
+      <button class="tool" data-tool="more" aria-label="More">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+        <span>More</span>
+      </button>
+    </div>
+
+    <div class="tool-panel" id="tp-speed" hidden>
+      <div class="grid-keys" id="speed-seg">
+        <button data-cmd="set_speed" data-args='{"value":0.5}' data-speed="0.5">0.5&times;</button>
+        <button data-cmd="set_speed" data-args='{"value":0.75}' data-speed="0.75">0.75&times;</button>
+        <button data-cmd="set_speed" data-args='{"value":1}' data-speed="1">1&times;</button>
+        <button data-cmd="set_speed" data-args='{"value":1.25}' data-speed="1.25">1.25&times;</button>
+        <button data-cmd="set_speed" data-args='{"value":1.5}' data-speed="1.5">1.5&times;</button>
+        <button data-cmd="set_speed" data-args='{"value":1.75}' data-speed="1.75">1.75&times;</button>
+        <button data-cmd="set_speed" data-args='{"value":2}' data-speed="2">2&times;</button>
       </div>
     </div>
 
-    <div class="group">
-      <div class="glabel">Audio</div>
-      <select id="sel-audio" class="select" aria-label="Audio track"></select>
-    </div>
-    <div class="group">
-      <div class="glabel">Subtitles</div>
+    <div class="tool-panel" id="tp-subs" hidden>
       <select id="sel-sub" class="select" aria-label="Subtitle track"></select>
+      <div class="stepper">
+        <span>Subtitle delay</span>
+        <button data-cmd="add_sub_delay" data-args='{"s":-0.1}' aria-label="Decrease">−</button>
+        <b id="sub-delay">0.0s</b>
+        <button data-cmd="add_sub_delay" data-args='{"s":0.1}' aria-label="Increase">+</button>
+      </div>
+    </div>
+
+    <div class="tool-panel" id="tp-audio" hidden>
+      <select id="sel-audio" class="select" aria-label="Audio track"></select>
+      <div class="stepper">
+        <span>Audio delay</span>
+        <button data-cmd="add_audio_delay" data-args='{"s":-0.1}' aria-label="Decrease">−</button>
+        <b id="aud-delay">0.0s</b>
+        <button data-cmd="add_audio_delay" data-args='{"s":0.1}' aria-label="Increase">+</button>
+      </div>
+    </div>
+
+    <div class="tool-panel" id="tp-episodes" hidden>
+      <button class="wide-key" id="btn-next-2" data-cmd="player_next_video">Next episode</button>
+      <button class="wide-key" id="btn-eplist">Episode &amp; stream list</button>
+    </div>
+
+    <div class="tool-panel" id="tp-more" hidden>
+      <div class="grid-keys two" id="chapters" hidden>
+        <button data-cmd="chapter_prev">◀&nbsp; Chapter</button>
+        <button data-cmd="chapter_next">Chapter &nbsp;▶</button>
+      </div>
+      <div class="grid-keys two">
+        <button data-cmd="frame_back_step">◀&nbsp; Frame</button>
+        <button data-cmd="frame_step">Frame &nbsp;▶</button>
+      </div>
+      <div class="grid-keys two">
+        <button data-cmd="toggle_fullscreen">Fullscreen</button>
+        <button id="btn-uw">Ultrawide zoom</button>
+      </div>
+      <button class="wide-key" data-cmd="stop_playback">Stop</button>
     </div>
   </section>
 
@@ -519,23 +705,31 @@
 
     <div class="group">
       <div class="glabel">Go to</div>
-      <div class="grid-keys">
-        <button data-cmd="nav_page" data-args='{"page":"#/"}'>Board</button>
-        <button data-cmd="nav_page" data-args='{"page":"#/discover"}'>Discover</button>
-        <button data-cmd="nav_page" data-args='{"page":"#/library"}'>Library</button>
-        <button data-cmd="nav_page" data-args='{"page":"#/calendar"}'>Calendar</button>
-        <button data-cmd="nav_page" data-args='{"page":"#/addons"}'>Add-ons</button>
-        <button data-cmd="nav_page" data-args='{"page":"#/settings"}'>Settings</button>
-      </div>
-    </div>
-
-    <div class="group">
-      <div class="glabel">Player</div>
-      <div class="grid-keys two">
-        <button data-cmd="toggle_subs_menu">Subtitles menu</button>
-        <button data-cmd="toggle_audio_menu">Audio menu</button>
-        <button data-cmd="toggle_fullscreen">Fullscreen</button>
-        <button data-cmd="stop_playback">Stop</button>
+      <div class="grid-keys pages">
+        <button data-cmd="nav_page" data-args='{"page":"#/"}'>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-5h4v5"/></svg>
+          <span>Board</span>
+        </button>
+        <button data-cmd="nav_page" data-args='{"page":"#/discover"}'>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8z"/></svg>
+          <span>Discover</span>
+        </button>
+        <button data-cmd="nav_page" data-args='{"page":"#/library"}'>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="m3 8 2-4h14l2 4"/><path d="M10 12h4"/></svg>
+          <span>Library</span>
+        </button>
+        <button data-cmd="nav_page" data-args='{"page":"#/calendar"}'>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+          <span>Calendar</span>
+        </button>
+        <button data-cmd="nav_page" data-args='{"page":"#/addons"}'>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M10 4.5a1.5 1.5 0 0 1 3 0V6a1 1 0 0 0 1 1h2a1 1 0 0 1 1 1v2a1 1 0 0 0 1 1h1.5a1.5 1.5 0 0 1 0 3H19a1 1 0 0 0-1 1v2a1 1 0 0 1-1 1h-2a1 1 0 0 0-1 1v1.5a1.5 1.5 0 0 1-3 0V19a1 1 0 0 0-1-1H7a1 1 0 0 1-1-1v-2a1 1 0 0 0-1-1H3.5a1.5 1.5 0 0 1 0-3H5a1 1 0 0 0 1-1V8a1 1 0 0 1 1-1h2a1 1 0 0 0 1-1z"/></svg>
+          <span>Add-ons</span>
+        </button>
+        <button data-cmd="nav_page" data-args='{"page":"#/settings"}'>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.5 1.5 0 0 0 .3 1.7l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.5 1.5 0 0 0-2.6 1v.2a2 2 0 1 1-4 0v-.1a1.5 1.5 0 0 0-2.6-1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.5 1.5 0 0 0-1-2.6H4a2 2 0 1 1 0-4h.1a1.5 1.5 0 0 0 1-2.6l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.5 1.5 0 0 0 1.7.3H11a1.5 1.5 0 0 0 1-1.4V4a2 2 0 1 1 4 0v.1a1.5 1.5 0 0 0 2.6 1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.5 1.5 0 0 0-.3 1.7V11a1.5 1.5 0 0 0 1.4 1H20a2 2 0 1 1 0 4h-.1a1.5 1.5 0 0 0-1.4 1z"/></svg>
+          <span>Settings</span>
+        </button>
       </div>
     </div>
   </section>
@@ -546,6 +740,7 @@
       <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       <input id="q" type="text" placeholder="Search films & series" autocomplete="off" autocapitalize="none" />
     </div>
+    <div class="loading-bar" id="browse-loading" hidden></div>
     <div id="browse-body">
       <div class="empty">Open the Board or Library on the TV and it shows up here.</div>
     </div>
@@ -595,6 +790,11 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
+  function setDelay(sel, v) {
+    v = +v || 0;
+    var el = q(sel);
+    if (el) el.textContent = (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(1) + "s";
+  }
 
   // ── command sender ─────────────────────────────────────────────
   function send(cmd, args) {
@@ -605,24 +805,42 @@
     }).catch(function () {});
   }
 
+  var BROWSE_MUTATING = { season_step: 1, refresh_browse: 1, nav_back: 1 };
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-cmd]");
     if (!b) return;
     var args = {};
     try { args = b.dataset.args ? JSON.parse(b.dataset.args) : {}; } catch (x) {}
     send(b.dataset.cmd, args);
+    if (BROWSE_MUTATING[b.dataset.cmd] && b.closest("#screen-browse")) setBrowseBusy(true);
+    if (b.dataset.cmd === "season_step" && b.closest("#screen-browse")) seasonLoading();
     if (b.animate) b.animate([{ opacity: .55 }, { opacity: 1 }], 160);
   });
 
   // ── tabs ───────────────────────────────────────────────────────
+  function showTab(panel) {
+    document.querySelectorAll("nav.tabs button").forEach(function (x) {
+      x.classList.toggle("active", x.dataset.panel === panel);
+    });
+    document.querySelectorAll(".screen").forEach(function (x) {
+      x.classList.toggle("active", x.id === panel);
+    });
+  }
   document.querySelectorAll("nav.tabs button").forEach(function (btn) {
+    btn.addEventListener("click", function () { showTab(btn.dataset.panel); });
+  });
+
+  // ── player tool panels (Speed / Subs / Audio / Episodes / More) ─
+  document.querySelectorAll(".tool[data-tool]").forEach(function (btn) {
     btn.addEventListener("click", function () {
-      document.querySelectorAll("nav.tabs button").forEach(function (x) { x.classList.remove("active"); });
-      document.querySelectorAll(".screen").forEach(function (x) { x.classList.remove("active"); });
-      btn.classList.add("active");
-      q("#" + btn.dataset.panel).classList.add("active");
+      var panel = q("#tp-" + btn.dataset.tool);
+      var open = panel && !panel.hidden;
+      document.querySelectorAll(".tool-panel").forEach(function (p) { p.hidden = true; });
+      document.querySelectorAll(".tool").forEach(function (t) { t.classList.remove("on"); });
+      if (panel && !open) { panel.hidden = false; btn.classList.add("on"); }
     });
   });
+  q("#btn-eplist").addEventListener("click", function () { showTab("screen-browse"); });
 
   // ── scrubber + volume ──────────────────────────────────────────
   var scrub = q("#scrub"), scrubbing = false;
@@ -630,7 +848,7 @@
   scrub.addEventListener("input", function () {
     scrubbing = true;
     setFill(scrub, scrub.value / 10);
-    if (lastDur) q("#lbl-cur").textContent = fmt((scrub.value / 1000) * lastDur);
+    if (lastDur) q("#t-cur").textContent = fmt((scrub.value / 1000) * lastDur);
   });
   scrub.addEventListener("change", function () {
     scrubbing = false;
@@ -643,6 +861,15 @@
     setFill(vol, (vol.value / 130) * 100);
     clearTimeout(volTimer);
     volTimer = setTimeout(function () { send("set_volume", { value: +vol.value }); }, 110);
+  });
+
+  // ── ultrawide zoom (mpv panscan) ───────────────────────────────
+  var uwOn = false, uwHold = 0;
+  q("#btn-uw").addEventListener("click", function () {
+    uwOn = !uwOn;                                  // optimistic
+    uwHold = Date.now() + 1200;
+    q("#btn-uw").classList.toggle("on", uwOn);
+    send("set_panscan", { value: uwOn ? 1 : 0 });
   });
 
   // ── audio / subtitle selects ───────────────────────────────────
@@ -665,7 +892,7 @@
     clearTimeout(qTimer);
     var v = qi.value.trim();
     if (!v) return;
-    qTimer = setTimeout(function () { send("search", { query: v }); }, 500);
+    qTimer = setTimeout(function () { send("search", { query: v }); setBrowseBusy(true); }, 500);
   });
 
   // ── browse rendering ───────────────────────────────────────────
@@ -681,15 +908,82 @@
     return " style=\"background-image:url('" + safe + "')\"";
   }
 
+  // ── loading state ───────────────────────────────────────────
+  var browseLoading = q("#browse-loading"), busyTimer = null, renderedSkeleton = false;
+  function setBrowseBusy(on) {
+    browseLoading.hidden = !on;
+    clearTimeout(busyTimer);
+    if (on) busyTimer = setTimeout(function () { browseLoading.hidden = true; }, 8000);
+  }
+  function skelLabel() { return '<div class="skel skel-label"></div>'; }
+  function skelRail() {
+    renderedSkeleton = true;
+    var s = skelLabel() + '<div class="skel-rail">';
+    for (var i = 0; i < 5; i++) s += '<div class="skel skel-poster"></div>';
+    return s + "</div>";
+  }
+  function skelList(n) {
+    renderedSkeleton = true;
+    var s = skelLabel();
+    for (var i = 0; i < (n || 5); i++) s += '<div class="skel skel-row"></div>';
+    return s;
+  }
+  function browseExpectsContent(b) {
+    var hs = b.hash || "";
+    if (b.view === "DETAIL" || b.view === "STREAMS") return "list";
+    if (hs === "" || hs === "#" || hs === "#/" || hs.indexOf("#/board") === 0) return "rail";
+    if (/^#\/(library|discover|search)/.test(hs)) return "list";
+    return null;
+  }
+  // Season ‹/› tapped: dim the current episode list and freeze it there until
+  // the seasons bar's label actually changes (or we give up after 8s). This
+  // avoids flashing through the intermediate "same season / no episodes yet"
+  // frames the TV emits while it switches.
+  var seasonTimer = null, seasonWas = null;
+  function seasonLabelNow(b) {
+    if (b && b.season) return b.season.label || (b.season.active != null ? "Season " + b.season.active : "");
+    var el = browseBody.querySelector(".season-bar b");
+    return el ? el.textContent.trim() : "";
+  }
+  function seasonLoading() {
+    seasonWas = seasonLabelNow(null);
+    setBrowseBusy(true);
+    browseBody.classList.add("busy");
+    clearTimeout(seasonTimer);
+    seasonTimer = setTimeout(function () {
+      browseBody.classList.remove("busy");
+      lastBrowseKey = ""; // unstick: force the next frame to render
+    }, 8000);
+  }
+
   function renderBrowse(b) {
     if (!b) return;
     var key = JSON.stringify(b);
     if (key === lastBrowseKey) return;
+    var reveal = false;
+    if (browseBody.classList.contains("busy")) {
+      var stillDetail = b.view === "DETAIL" || b.view === "STREAMS";
+      var now = seasonLabelNow(b);
+      var haveContent = (b.episodes || []).length || (b.streams || []).length;
+      // hold the dimmed list until the season label changed AND the new
+      // season's episodes are in — reveal is then a single clean fade
+      if (stillDetail && (!now || now === seasonWas || !haveContent)) return;
+      reveal = true;
+      clearTimeout(seasonTimer);
+    }
     try {
+      renderedSkeleton = false;
       renderBrowseInner(b);
       lastBrowseKey = key; // only cache on success, so a transient failure retries
+      if (reveal) {
+        // new content painted dimmed; next frame fade it in
+        requestAnimationFrame(function () { browseBody.classList.remove("busy"); });
+      }
+      if (!renderedSkeleton) setBrowseBusy(false); // real content arrived
     } catch (e) {
       // never let a scraper-shape surprise freeze the tab on its last render
+      browseBody.classList.remove("busy");
+      setBrowseBusy(false);
       browseBody.innerHTML =
         '<div class="empty" style="color:#e2564d">Browse render failed: ' +
         esc(String((e && e.message) || e)) + "</div>";
@@ -699,11 +993,25 @@
     var h = "";
     if (b.view === "DETAIL" || b.view === "STREAMS") {
       h += '<div class="crumb"><button data-cmd="nav_back">Back</button> Episodes &amp; streams</div>';
+      var sn = b.season;
+      if (sn && (sn.hasPrev || sn.hasNext || sn.active != null)) {
+        h += '<div class="season-bar">' +
+          '<button data-cmd="season_step" data-args=\'{"dir":"prev"}\'' + (sn.hasPrev ? "" : " disabled") + ' aria-label="Previous season">‹</button>' +
+          '<b>' + esc(sn.label || (sn.active != null ? "Season " + sn.active : "Season")) + "</b>" +
+          '<button data-cmd="season_step" data-args=\'{"dir":"next"}\'' + (sn.hasNext ? "" : " disabled") + ' aria-label="Next season">›</button>' +
+          "</div>";
+      }
       if ((b.episodes || []).length) {
-        h += '<div class="rail-label">Episodes</div><div class="list">';
+        h += '<div class="rail-label">' +
+          (sn && sn.active != null ? "Season " + sn.active + " episodes" : "Episodes") +
+          '</div><div class="list">';
         b.episodes.forEach(function (ep) {
-          h += '<div class="row" data-pick=\'' + esc(JSON.stringify({ season: ep.season, episode: ep.episode, ordinal: ep.ordinal })) + "'>" +
-            (ep.season != null ? '<span class="ix">S' + ep.season + '·E' + ep.episode + "</span>" : '<span class="ix">' + ((ep.ordinal || 0) + 1) + "</span>") +
+          var ix = ep.episode != null
+            ? (ep.season != null ? "S" + ep.season + "·E" + ep.episode : "E" + ep.episode)
+            : (ep.ordinal || 0) + 1;
+          h += '<div class="row' + (ep.watched ? " watched" : "") + '" data-pick=\'' +
+            esc(JSON.stringify({ season: ep.season, episode: ep.episode, ordinal: ep.ordinal })) + "'>" +
+            '<span class="ix">' + ix + "</span>" +
             '<div class="body"><div class="n">' + esc(ep.title || ep.label) + "</div></div></div>";
         });
         h += "</div>";
@@ -719,7 +1027,7 @@
         h += "</div>";
       }
       if (!(b.episodes || []).length && !(b.streams || []).length) {
-        h += '<div class="empty">Waiting for the TV to load this title…</div>';
+        h += skelList(6);
       }
     } else if ((b.boardRows || []).length) {
       b.boardRows.forEach(function (row) {
@@ -738,10 +1046,13 @@
       });
       h += "</div>";
     } else {
-      h = '<div class="empty">Open the Board or Library on the TV and it shows up here.</div>';
+      var want = browseExpectsContent(b);
+      h = want === "rail" ? skelRail() + skelRail()
+        : want === "list" ? skelList(6)
+        : '<div class="empty">Open the Board or Library on the TV and it shows up here.</div>';
     }
-    // Diagnostics only surface when a scraper errored or the expected list came
-    // back empty (scrapers.js only attaches _debug in that case).
+    // Diagnostics surface only when a scraper errored or the expected list came
+    // back empty (scrapers.js gates each).
     if (b._scrapeErrors || b._debug) {
       h += '<div class="empty" style="text-align:left;font-family:monospace;font-size:10px;color:#e2564d;white-space:pre-wrap;word-break:break-all">' +
         esc(JSON.stringify({ scrapeErrors: b._scrapeErrors, debug: b._debug }, null, 1)) +
@@ -766,10 +1077,11 @@
       var o = JSON.parse(item.dataset.item);
       if (e.target.closest("[data-role='details']")) send("open_details", o);
       else send(item.dataset.cw ? "instant_resume" : "open_item", o);
+      setBrowseBusy(true);
       return;
     }
     var pick = e.target.closest("[data-pick]");
-    if (pick) { send("pick_episode", JSON.parse(pick.dataset.pick)); return; }
+    if (pick) { send("pick_episode", JSON.parse(pick.dataset.pick)); setBrowseBusy(true); return; }
     var st = e.target.closest("[data-stream]");
     if (st) { send("launch_stream", { index: +st.dataset.stream }); return; }
   });
@@ -800,8 +1112,10 @@
     var pb = q("#btn-pause");
     pb.dataset.state = p.pause ? "paused" : "playing";
 
-    var next = w.player_ui && w.player_ui.nextVideoAvailable;
-    q("#btn-next").hidden = !next;
+    var next = !!(w.player_ui && w.player_ui.nextVideoAvailable);
+    q("#btn-next").disabled = !next;
+    q("#btn-next-2").disabled = !next;
+    q("#btn-mute").classList.toggle("muted", !!p.mute);
 
     if (!scrubbing && p.duration) {
       lastDur = p.duration;
@@ -810,8 +1124,6 @@
       setFill(scrub, pct / 10);
       q("#t-cur").textContent = fmt(p.time_pos);
       q("#t-dur").textContent = fmt(p.duration);
-      q("#lbl-cur").textContent = fmt(p.time_pos);
-      q("#lbl-rem").textContent = "−" + fmt(p.duration - (p.time_pos || 0));
     } else if (!p.duration) {
       q("#t-cur").textContent = "0:00";
       q("#t-dur").textContent = "0:00";
@@ -820,16 +1132,27 @@
     if (document.activeElement !== vol && p.volume != null) {
       vol.value = Math.round(p.volume);
       setFill(vol, (p.volume / 130) * 100);
-      q("#vol-val").textContent = Math.round(p.volume) + "%" + (p.mute ? "  ·  muted" : "");
+      q("#vol-val").textContent = Math.round(p.volume) + "%";
     }
     fillTracks(q("#sel-audio"), p.audio_tracks, p.aid, null);
     fillTracks(q("#sel-sub"), p.sub_tracks, p.sid, "Off");
 
+    // speed highlight (mirrors Stremio's speed menu)
+    var sp = p.speed || 1;
+    document.querySelectorAll("#speed-seg button").forEach(function (b) {
+      b.classList.toggle("on", Math.abs(parseFloat(b.dataset.speed) - sp) < 0.001);
+    });
+    setDelay("#sub-delay", p.sub_delay);
+    setDelay("#aud-delay", p.audio_delay);
+    q("#chapters").hidden = !((p.chapters || []).length > 1);
+    if (p.panscan != null && Date.now() > uwHold) {
+      uwOn = p.panscan > 0.01;
+      q("#btn-uw").classList.toggle("on", uwOn);
+    }
+
     renderBrowse(w.browse);
 
-    if (route.view === "PLAYER" && !wasPlayer) {
-      document.querySelector('nav.tabs button[data-panel="screen-play"]').click();
-    }
+    if (route.view === "PLAYER" && !wasPlayer) showTab("screen-play");
     wasPlayer = route.view === "PLAYER";
   }
 
@@ -862,6 +1185,7 @@
 
   setFill(scrub, 0);
   setFill(vol, (50 / 130) * 100);
+  setBrowseBusy(true); // until the first state frame lands
   connectSSE();
 })();
 </script>
