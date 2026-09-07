@@ -3,8 +3,18 @@
  * @description Enumerate whatever page is currently open (board rows / library /
  *              search results / episode list / stream list) into plain objects the
  *              phone can render. Never navigates on its own.
- * @version 1.0.0
+ * @version 1.1.3
  * @author allecsc / Stremio Kai
+ *
+ * @changelog
+ *   1.1.3 - cap streamList (80) + episodeRows (400): debrid addons list 100s of
+ *           results and the whole list rode in every SSE frame (~640 KB seen).
+ *   1.1.2 - `_debug` emitted only when the route's expected list came back empty.
+ *   1.1.1 - `_debug` always emitted (route + selector-match flags + counts).
+ *   1.1.0 - Robust id/poster extraction (href OR <a id> OR poster URL); carry a
+ *           DOM-findable `ref` so the phone opens items by clicking the real card
+ *           instead of guessing a URL. Self-diagnosing `_debug` sample.
+ *   1.0.0 - Initial.
  */
 
 (function () {
@@ -13,94 +23,146 @@
   if (window.KaiRemote.Scrapers) return;
 
   const SEL = () => window.KaiRemote.SEL;
+  const ID_RE = /(tt\d{6,}|(?:tmdb|tvdb|mal|anilist|kitsu|anidb):[A-Za-z0-9]+)/i;
 
   function text(el, sel) {
-    const n = el.querySelector(sel);
-    return n ? n.textContent.trim() : "";
+    const n = el && el.querySelector(sel);
+    return n ? n.textContent.trim().replace(/\s+/g, " ") : "";
   }
 
-  function posterUrl(el) {
-    const img = el.querySelector(SEL().metaItemPoster);
-    if (img && img.src) return img.src;
-    const bg = el.querySelector("[style*='background-image']");
-    if (bg) {
-      const m = bg.getAttribute("style").match(/url\(["']?(.*?)["']?\)/);
-      if (m) return m[1];
+  function posterFrom(el) {
+    // 1. <img> (may be lazy: data-src / not-yet-loaded)
+    const img = el.querySelector(SEL().posterImg);
+    if (img) {
+      const src = img.currentSrc || img.getAttribute("src") || img.dataset.src || "";
+      if (src && !src.startsWith("data:")) return src;
+    }
+    // 2. CSS background-image on the poster container / any descendant
+    const bgEl =
+      el.querySelector(SEL().posterContainer) ||
+      el.querySelector("[style*='background-image']");
+    if (bgEl) {
+      let bg = bgEl.getAttribute("style") || "";
+      if (!/url\(/.test(bg)) {
+        try { bg = getComputedStyle(bgEl).backgroundImage || ""; } catch (e) {}
+      }
+      const m = bg.match(/url\(["']?(.*?)["']?\)/);
+      if (m && m[1] && !m[1].startsWith("data:")) return m[1];
     }
     return "";
   }
 
-  function parseDeepLink(href) {
-    // #/detail/series/tt123/tt123  or  #/detail/movie/tt456
-    const m = (href || "").match(/#\/detail\/(movie|series)\/([^/?]+)/);
+  // Pull {type,id} from a Stremio detail/player href.
+  function fromHref(href) {
+    const m = (href || "").match(/#\/(?:detail|player)\/(movie|series|other|channel|tv)\/([^/?]+)/);
     if (!m) return null;
     return { type: m[1], id: decodeURIComponent(m[2]).split("/")[0] };
   }
 
-  function scrapeGridItem(el) {
-    const a = el.querySelector("a[href]") || el.closest("a[href]");
-    const href = a ? a.getAttribute("href") : "";
-    const dl = parseDeepLink(href);
+  // el is a .meta-item-container (itself an <a>, or wrapping/inside one).
+  function scrapeGridItem(el, ordinal) {
+    const anchor =
+      (el.matches && el.matches("a") && el) ||
+      el.querySelector("a[href], a[id]") ||
+      el.closest("a[href], a[id]") ||
+      el;
+
+    const href = anchor.getAttribute ? anchor.getAttribute("href") || "" : "";
+    const domId = (anchor.id || el.id || "").trim();
+    const title =
+      el.getAttribute("title") ||
+      (anchor.getAttribute && anchor.getAttribute("title")) ||
+      text(el, SEL().metaItemTitle);
+    const poster = posterFrom(el);
+
+    let type = null,
+      metaId = null;
+    const dl = fromHref(href);
+    if (dl) { type = dl.type; metaId = dl.id; }
+    if (!metaId && domId) {
+      const im = domId.match(ID_RE);
+      metaId = im ? im[1] : domId;
+    }
+    if (!metaId && poster) {
+      const pm = poster.match(/(tt\d{6,})/);
+      if (pm) metaId = pm[1];
+    }
+
     return {
-      name: text(el, SEL().metaItemLabel) || el.getAttribute("title") || "",
-      poster: posterUrl(el),
+      name: (title || "").trim(),
+      poster: poster,
+      type: type,
+      metaId: metaId,
       deepLink: href,
-      type: dl ? dl.type : null,
-      metaId: dl ? dl.id : null,
+      // How the webmod re-finds this exact card to click it:
+      ref: { domId: domId || null, title: (title || "").trim() || null, ordinal: ordinal },
     };
+  }
+
+  function scrapeContainer(root) {
+    const seen = new Set();
+    const out = [];
+    root.querySelectorAll(SEL().metaItem).forEach((it, i) => {
+      if (it.closest(SEL().seeAll)) return;
+      const parsed = scrapeGridItem(it, i);
+      const k = parsed.metaId || parsed.name;
+      if (!k || seen.has(k)) return;
+      seen.add(k);
+      if (parsed.name || parsed.metaId) out.push(parsed);
+    });
+    return out;
   }
 
   const Scrapers = {
     boardRows() {
       const rows = [];
       document.querySelectorAll(SEL().boardRow).forEach((row) => {
-        const items = [];
-        row.querySelectorAll(SEL().metaItem).forEach((it) => {
-          const parsed = scrapeGridItem(it);
-          if (parsed.name || parsed.metaId) items.push(parsed);
+        const items = scrapeContainer(row).slice(0, 25);
+        if (!items.length) return;
+        rows.push({
+          rowTitle:
+            text(row, SEL().boardRowLabel) ||
+            (row.getAttribute("aria-label") || "").trim() ||
+            "",
+          continueWatching: !!row.closest(SEL().continueWatchingRow) ||
+            /continue/i.test(text(row, SEL().boardRowLabel)),
+          items: items,
         });
-        if (items.length) {
-          rows.push({
-            rowTitle: text(row, SEL().boardRowLabel),
-            continueWatching: !!row.closest(SEL().continueWatchingRow),
-            items: items.slice(0, 30),
-          });
-        }
       });
       return rows;
     },
 
     grid() {
-      // library / discover / search results - a single flat grid
-      const out = [];
       const container =
-        document.querySelector(SEL().metaItemsContainer) || document;
-      container.querySelectorAll(SEL().metaItem).forEach((it) => {
-        const parsed = scrapeGridItem(it);
-        if (parsed.name || parsed.metaId) out.push(parsed);
-      });
-      return out.slice(0, 100);
+        document.querySelector(SEL().metaItemsContainer) ||
+        document.querySelector(SEL().boardContent) ||
+        document.body;
+      return scrapeContainer(container).slice(0, 120);
     },
 
     episodeRows() {
       const list = document.querySelector(SEL().videosList);
       if (!list) return [];
       const rows = [];
-      list.querySelectorAll(SEL().videoRow).forEach((row) => {
+      const nodes = Array.prototype.slice.call(
+        list.querySelectorAll(SEL().videoRow),
+        0,
+        400,
+      );
+      nodes.forEach((row, i) => {
         const label = row.textContent.trim().replace(/\s+/g, " ");
-        // Try to pull S/E from a "1x03" / "S1 E3" style label or data attrs.
         let season = null,
           episode = null;
-        const m = label.match(/(?:S(\d+)\s*[·:]?\s*E(\d+))|(\d+)\s*[x×]\s*(\d+)/i);
-        if (m) {
-          season = parseInt(m[1] || m[3], 10);
-          episode = parseInt(m[2] || m[4], 10);
-        }
+        const m =
+          label.match(/S\s*(\d+)\s*[·:\s]*E\s*(\d+)/i) ||
+          label.match(/(\d+)\s*[x×]\s*(\d+)/);
+        if (m) { season = parseInt(m[1], 10); episode = parseInt(m[2], 10); }
         rows.push({
-          label,
-          title: text(row, SEL().videoRowTitle) || label,
-          season,
-          episode,
+          label: label.slice(0, 120),
+          title: text(row, SEL().videoRowTitle) || label.slice(0, 80),
+          season: season,
+          episode: episode,
+          ordinal: i,
           watched: /watched|seen/i.test(row.className),
           el: row,
         });
@@ -109,12 +171,18 @@
     },
 
     streamList() {
-      const links = document.querySelectorAll(SEL().streamLink);
       const out = [];
+      // Cap hard: debrid/torrent addons can list many hundreds of results and
+      // the whole list rides in every SSE frame to the phone.
+      const links = Array.prototype.slice.call(
+        document.querySelectorAll(SEL().streamLink),
+        0,
+        80,
+      );
       links.forEach((a, i) => {
         out.push({
           index: i,
-          label: a.textContent.trim().replace(/\s+/g, " ").slice(0, 120),
+          label: a.textContent.trim().replace(/\s+/g, " ").slice(0, 140),
           addon: text(a, SEL().streamAddonName),
           href: a.getAttribute("href") || "",
         });
@@ -122,27 +190,66 @@
       return out;
     },
 
-    // Snapshot appropriate to the current route.
     browse() {
       const route = window.RouteDetector
         ? window.RouteDetector.getRouteState()
         : { view: "UNKNOWN" };
       const hash = window.location.hash;
-      const out = { view: route.view, hash };
+      const out = { view: route.view, hash: hash };
 
-      if (hash === "#/" || hash === "" || hash === "#") {
+      if (hash === "" || hash === "#" || hash === "#/" || hash.startsWith("#/board")) {
         out.boardRows = this.boardRows();
-      } else if (hash.startsWith("#/library") || hash.startsWith("#/board")) {
-        out.grid = this.grid();
-      } else if (hash.startsWith("#/search")) {
-        out.searchResults = this.grid();
-      } else if (hash.startsWith("#/discover")) {
+      } else if (
+        hash.startsWith("#/library") ||
+        hash.startsWith("#/discover") ||
+        hash.startsWith("#/search")
+      ) {
         out.grid = this.grid();
       }
 
       if (route.view === "DETAIL" || route.view === "STREAMS") {
-        out.episodes = this.episodeRows().map(({ el, ...rest }) => rest);
+        out.episodes = this.episodeRows().map(function (r) {
+          return {
+            label: r.label, title: r.title, season: r.season,
+            episode: r.episode, ordinal: r.ordinal, watched: r.watched,
+          };
+        });
         out.streams = this.streamList();
+      }
+
+      // Self-diagnosis: only when the list the route expects came back empty,
+      // ship selector-match flags + one raw sample so a selector break can be
+      // fixed from the phone without PC console access.
+      const wantList =
+        hash === "" || hash === "#" || hash === "#/" || hash.startsWith("#/board")
+          ? "board"
+          : /^#\/(library|discover|search)/.test(hash)
+            ? "grid"
+            : route.view === "DETAIL" || route.view === "STREAMS"
+              ? "detail"
+              : null;
+      const gotItems =
+        wantList === "board"
+          ? (out.boardRows || []).length
+          : wantList === "grid"
+            ? (out.grid || []).length
+            : wantList === "detail"
+              ? (out.episodes || []).length || (out.streams || []).length
+              : true;
+      if (wantList && !gotItems) {
+        const raw = document.querySelector(SEL().metaItem);
+        out._debug = {
+          hash: hash,
+          view: route.view,
+          want: wantList,
+          rowMatch: !!document.querySelector(SEL().boardRow),
+          containerMatch: !!document.querySelector(SEL().metaItemsContainer),
+          metaItemMatch: !!raw,
+          metaItem: raw ? raw.outerHTML.slice(0, 700) : "(no match)",
+          videoRow: (document.querySelector(SEL().videoRow) || {}).outerHTML
+            ? document.querySelector(SEL().videoRow).outerHTML.slice(0, 400)
+            : null,
+        };
       }
       return out;
     },
@@ -150,7 +257,9 @@
     nowPlayingMeta() {
       const logo = document.querySelector(SEL().logoImage);
       return {
-        title: logo ? logo.getAttribute("title") || logo.getAttribute("alt") : null,
+        title: logo
+          ? logo.getAttribute("title") || logo.getAttribute("alt") || null
+          : null,
       };
     },
 
@@ -163,5 +272,5 @@
   };
 
   window.KaiRemote.Scrapers = Scrapers;
-  console.log("[Kai Remote] scrapers loaded");
+  console.log("[Kai Remote] scrapers loaded (v1.1)");
 })();

@@ -92,7 +92,9 @@ def _clamp(v, lo, hi):
 
 
 MPV_COMMANDS = {
-    "toggle_pause":      lambda a: ["cycle", "pause"],
+    # play/pause is a WEBMOD_COMMAND (space to the web player). Toggling `pause`
+    # on the pipe pauses fine but the Stremio web UI owns the state and re-asserts
+    # pause on unpause.
     "set_pause":         lambda a: ["set_property", "pause", bool(a.get("value"))],
     "seek_relative":     lambda a: ["seek", _clamp(a.get("secs", 0), -3600, 3600), "relative"],
     "seek_absolute":     lambda a: ["seek", _clamp(a.get("pos", 0), 0, 1e7), "absolute"],
@@ -117,10 +119,12 @@ MPV_COMMANDS = {
 # Commands forwarded to the webmod (things mpv IPC cannot do). Just a whitelist -
 # the webmod knows how to actuate each one.
 WEBMOD_COMMANDS = {
+    "toggle_pause",
     "nav_dpad", "nav_ok", "nav_back", "nav_home", "nav_page", "nav_hash",
     "player_next_video", "player_prev_video",
     "toggle_subs_menu", "toggle_audio_menu",
-    "open_detail", "open_streams", "pick_episode", "launch_stream",
+    "open_item", "open_details", "open_detail", "open_streams",
+    "pick_episode", "launch_stream",
     "instant_resume", "search", "refresh_browse",
 }
 
@@ -617,6 +621,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Kai-Remote")
+        self.send_header("Cache-Control", "no-store, must-revalidate")
         self.end_headers()
         self.wfile.write(body)
 
@@ -625,6 +630,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(data)))
         self.send_header("Access-Control-Allow-Origin", "*")
+        # The webapp HTML + state responses must never be cached: phones
+        # otherwise keep serving a stale index.html and never see updates.
+        self.send_header("Cache-Control", "no-store, must-revalidate")
         self.end_headers()
         self.wfile.write(data)
 

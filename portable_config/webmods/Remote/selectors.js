@@ -1,12 +1,19 @@
 /**
  * @name Remote - Selector Map
- * @description The ONLY file in webmods/Remote/ that hard-codes Stremio's hashed
- *              class names. Prefer [class^="prefix-"] + attribute/title selectors
- *              that survive class-hash churn between community-v5 rebases.
- * @version 1.0.0
+ * @description The ONE file in webmods/Remote/ that hard-codes Stremio's hashed
+ *              class names. Values are taken from the classes navigation.js /
+ *              Metadata/dom-processor.js / details-enhancer.js already rely on,
+ *              with a [class^=] / [class*=] fallback so a hash change degrades
+ *              instead of breaking.
+ * @version 1.1.0
  * @author allecsc / Stremio Kai
  *
- * !! RE-VERIFY EVERY SELECTOR HERE ON EVERY UPSTREAM (stremio-community-v5) REBASE !!
+ * @changelog
+ *   1.1.0 - Real class names from the working webmods; poster + video-row + grid
+ *           container selectors corrected.
+ *   1.0.0 - Initial (prefix guesses).
+ *
+ * !! RE-VERIFY ON EVERY stremio-community-v5 REBASE !!
  */
 
 (function () {
@@ -15,46 +22,45 @@
   if (window.KaiRemote.SEL) return;
 
   window.KaiRemote.SEL = {
-    // --- routing / shell ------------------------------------------------
-    routesContainer: ".router-lqoloM, [class^='routes-container']",
-
     // --- board (home) --------------------------------------------------
-    boardRow: "[class^='board-row-']",
-    boardRowLabel: "[class^='row-label-'], [class*='header-'] [class^='title-']",
+    boardContent: ".board-content-nPWv1, [class^='board-content-']",
+    boardRow: ".board-row-CoJrZ, [class^='board-row-']",
+    // Stremio renders the row heading as an <a>/<div> with a title- class,
+    // a direct child of the row (not inside a meta-item).
+    boardRowLabel:
+      ":scope > a [class*='title-'], :scope > div [class*='title-'], [class*='header-'] [class*='title-'], [class*='title-container-'] [class*='title-']",
+    seeAll: ".see-all-container-MoOtW, [class^='see-all-']",
 
-    // --- generic meta grid (board / discover / library / search) ------
-    metaItem: "[class^='meta-item-container-'], [class^='meta-item-']",
-    metaItemLabel: "[class^='title-bar-container-'] [class^='title-'], [class^='title-']",
-    metaItemPoster: "[class^='poster-image-'], [class^='poster-container-'] img",
-    metaItemsContainer: "[class^='meta-items-container-'], [class^='meta-items-']",
-    continueWatchingRow: "[class^='continue-watching-row-']",
-    playIconLayer: "[class^='play-icon-layer-']",
+    // --- meta grid (board / discover / library / search) --------------
+    metaItemsContainer:
+      ".meta-items-container-n8vNz, .meta-items-container-qcuUA, .meta-items-container-IKrND, [class^='meta-items-container-']",
+    // The meta-item IS an <a> (navigation.js checks classList on it directly).
+    metaItem: ".meta-item-container-Tj0Ib, [class^='meta-item-container-']",
+    metaItemTitle: "[class*='title-bar-'] [class*='title-'], [class*='title-']",
+    posterImg: "img.poster-image-NiV7O, img[class*='poster-image'], img[src*='poster']",
+    posterContainer: ".poster-container-qkw48, [class*='poster-container'], [class*='poster-image']",
+    continueWatchingRow:
+      ".continue-watching-row-ZiNSa, [class*='continue-watching']",
 
     // --- detail / episodes / streams ---------------------------------
-    videosList: "[class^='videos-list-']",
-    videoRow: "[class^='video-container-'], [class^='video-']",
-    videoRowTitle: "[class^='title-']",
-    videoRowNumber: "[class^='episode-'], [class^='season-episode-']",
-    streamsList: "[class^='streams-list-']",
-    streamLink: "[class^='streams-list-'] a[href]",
-    streamAddonName: "[class^='addon-name-'], [class^='label-']",
+    videosList: ".videos-list-nE0LJ, [class^='videos-list-']",
+    videoRow: ".video-container-ezBpK, [class^='video-container-']",
+    videoRowTitle: ".title-container-NcfV9, [class*='title-container-'], [class*='title-']",
+    streamsList: ".streams-list-Y1lCM, [class^='streams-list-']",
+    streamLink:
+      ".streams-list-Y1lCM a[href], [class^='streams-list-'] a[href]",
+    streamAddonName: "[class*='addon-name-'], [class*='name-container-'], [class*='label-']",
 
     // --- player ------------------------------------------------------
-    player: "#/player",
-    nextVideoButton: 'div[title="Next Video"]',
-    controlBar: "[class^='control-bar-']",
-    logoImage: ".logo-X3hTV, [class^='logo-']",
+    nextVideoButton: 'div[title="Next Video"], [title="Next Video"]',
+    controlBar: ".control-bar-container-xsWA7, [class^='control-bar-']",
+    logoImage: ".logo-X3hTV, [class*='logo-']",
 
-    // --- search ----------------------------------------------------
+    // --- search / nav ----------------------------------------------
     searchInput:
-      "[class^='search-input-'] input, [class^='search-bar-'] input, input[type='search']",
-
-    // --- top nav / sidebar (for D-pad focus targets) --------------
-    horizontalNav: "[class^='horizontal-nav-bar-']",
-    verticalNav: "[class^='vertical-nav-bar-']",
+      ".search-input-IQ0ZW input, [class*='search-input-'] input, [class*='search-bar-'] input, input[type='search']",
   };
 
-  // Page hashes for nav_page cycling (mirrors navigation.js PAGES).
   window.KaiRemote.PAGES = [
     "#/",
     "#/discover",
@@ -64,5 +70,5 @@
     "#/settings",
   ];
 
-  console.log("[Kai Remote] selectors loaded");
+  console.log("[Kai Remote] selectors loaded (v1.1)");
 })();

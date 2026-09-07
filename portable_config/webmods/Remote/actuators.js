@@ -3,7 +3,13 @@
  * @description Synthetic keyboard/mouse actuation of the Stremio React UI, adapted
  *              from webmods/Utilities/navigation.js. Every "webmod command" that
  *              the phone can send is executed here.
- * @version 1.0.0
+ * @version 1.1.2
+ * @changelog 1.1.2 - open_details: "tap the title" action that always opens the
+ *            details page (never resumes), mirroring Stremio's own card.
+ *   1.1.1 - nav_ok: use a literal play-icon selector (selectors.js no longer
+ *           defines playIconLayer; the undefined key threw SyntaxError).
+ *   1.1.0 - play/pause routed through the web player (space) instead of the mpv
+ *           pipe, which only paused reliably (web UI owns the state).
  * @author allecsc / Stremio Kai
  */
 
@@ -35,6 +41,39 @@
     el.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, cancelable: true }));
     el.click();
     return true;
+  }
+
+  // Re-find the exact catalog card the scraper reported, using the `ref` it
+  // carried (dom id > title > ordinal). More reliable than rebuilding a URL,
+  // which needs a content type the DOM often doesn't expose.
+  function findCard(ref) {
+    if (!ref) return null;
+    const SEL = window.KaiRemote.SEL;
+    if (ref.domId) {
+      const byId =
+        document.getElementById(ref.domId) ||
+        document.querySelector('[id="' + CSS.escape(ref.domId) + '"]');
+      if (byId) return byId.closest(SEL.metaItem) || byId;
+    }
+    const cards = Array.from(document.querySelectorAll(SEL.metaItem));
+    if (ref.title) {
+      const hit = cards.find(function (c) {
+        return (
+          (c.getAttribute("title") || "").trim() === ref.title ||
+          c.textContent.trim().replace(/\s+/g, " ").indexOf(ref.title) === 0
+        );
+      });
+      if (hit) return hit;
+    }
+    if (ref.ordinal != null && cards[ref.ordinal]) return cards[ref.ordinal];
+    return null;
+  }
+
+  async function clickInView(el) {
+    if (!el) return { ok: false, error: "element not found" };
+    el.scrollIntoView({ block: "center", inline: "center" });
+    await new Promise(function (r) { setTimeout(r, 140); });
+    return { ok: clickReal(el) };
   }
 
   const DPAD = {
@@ -69,16 +108,26 @@
       if (a && a !== document.body) {
         const cw = a.closest(window.KaiRemote.SEL.continueWatchingRow);
         if (cw) {
+          // literal selector - selectors.js no longer carries a playIconLayer key
+          const PLAY_ICON = "[class*='play-icon'], [class*='play-button']";
           const icon =
-            a.querySelector(window.KaiRemote.SEL.playIconLayer) ||
-            a
-              .closest(window.KaiRemote.SEL.metaItem)
-              ?.querySelector(window.KaiRemote.SEL.playIconLayer);
+            a.querySelector(PLAY_ICON) ||
+            (a.closest(window.KaiRemote.SEL.metaItem) || document.body).querySelector(
+              PLAY_ICON,
+            );
           if (icon) return { ok: clickReal(icon), did: "resume" };
         }
         return { ok: clickReal(a), did: "click" };
       }
       return { ok: false, error: "nothing focused" };
+    },
+
+    // Play/pause. Sent to the Stremio web player (space), not the mpv pipe:
+    // the web UI owns play/pause state and reverts an out-of-band unpause.
+    toggle_pause() {
+      if (!onPlayer()) return { ok: false, error: "not on player" };
+      key(document, " ", "Space", 32);
+      return { ok: true };
     },
 
     nav_back() {
@@ -153,40 +202,71 @@
       return { ok: true };
     },
 
+    // Primary path from the Browse tab: open a catalog item by clicking its
+    // real card. `ref` comes straight from the scraper.
+    async open_item(args) {
+      const a = args || {};
+      let el = findCard(a.ref);
+      if (!el && a.type && a.metaId) {
+        window.location.hash =
+          "#/detail/" + a.type + "/" + encodeURIComponent(a.metaId) +
+          "/" + encodeURIComponent(a.metaId);
+        return { ok: true, via: "hash" };
+      }
+      if (!el) return { ok: false, error: "card not found" };
+      return clickInView(el);
+    },
+
+    // "Tap the title" from Browse: always open the details page, never resume.
+    // Prefer a direct hash nav; for cards with no known type (e.g. Continue
+    // Watching) fall back to clicking the card's title element, which is what
+    // Stremio itself routes to the details page.
+    async open_details(args) {
+      const a = args || {};
+      if (a.type && a.metaId) {
+        window.location.hash =
+          "#/detail/" + a.type + "/" + encodeURIComponent(a.metaId) +
+          "/" + encodeURIComponent(a.metaId);
+        return { ok: true, via: "hash" };
+      }
+      const card = findCard(a.ref);
+      if (!card) return { ok: false, error: "card not found" };
+      const titleEl = card.querySelector(window.KaiRemote.SEL.metaItemTitle);
+      return clickInView(titleEl || card);
+    },
+
     async pick_episode(args) {
-      const { season, episode } = args || {};
+      const a = args || {};
       const rows = window.KaiRemote.Scrapers.episodeRows();
-      const match = rows.find(
-        (r) => r.season == season && r.episode == episode,
-      );
+      let match = null;
+      if (a.season != null && a.episode != null) {
+        match = rows.find((r) => r.season == a.season && r.episode == a.episode);
+      }
+      if (!match && a.ordinal != null) match = rows[a.ordinal];
       if (!match || !match.el) return { ok: false, error: "episode not found" };
-      match.el.scrollIntoView({ block: "center" });
-      await new Promise((r) => setTimeout(r, 120));
-      return { ok: clickReal(match.el) };
+      return clickInView(match.el);
     },
 
     launch_stream(args) {
       const idx = (args && args.index) || 0;
       const links = document.querySelectorAll(window.KaiRemote.SEL.streamLink);
       if (!links.length) return { ok: false, error: "no streams" };
-      const link = links[Math.min(idx, links.length - 1)];
-      return { ok: clickReal(link) };
+      return { ok: clickReal(links[Math.min(idx, links.length - 1)]) };
     },
 
-    instant_resume(args) {
-      const metaId = args && args.metaId;
-      const rows = document.querySelectorAll(
-        window.KaiRemote.SEL.continueWatchingRow + " " + window.KaiRemote.SEL.metaItem,
-      );
-      for (const item of rows) {
-        const href = item.querySelector("a[href]")?.getAttribute("href") || "";
-        if (!metaId || href.includes(metaId)) {
-          const icon = item.querySelector(window.KaiRemote.SEL.playIconLayer);
-          if (icon) return { ok: clickReal(icon) };
-          return { ok: clickReal(item) };
-        }
+    async instant_resume(args) {
+      const ref = args && args.ref;
+      const cwRow = document.querySelector(window.KaiRemote.SEL.continueWatchingRow);
+      let card = null;
+      if (cwRow && ref) {
+        card = findCard(ref);
+        if (card && !cwRow.contains(card)) card = null;
       }
-      return { ok: false, error: "not in continue watching" };
+      if (!card && cwRow) card = cwRow.querySelector(window.KaiRemote.SEL.metaItem);
+      if (!card) return { ok: false, error: "not in continue watching" };
+      const play =
+        card.querySelector("[class*='play-icon'], [class*='play-button']") || card;
+      return clickInView(play);
     },
 
     async search(args) {

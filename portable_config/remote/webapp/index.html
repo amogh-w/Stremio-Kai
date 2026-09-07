@@ -3,201 +3,575 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-<meta name="theme-color" content="#0b0d12" />
-<title>Stremio Kai Remote</title>
+<meta name="color-scheme" content="dark light" />
+<meta name="theme-color" content="#08090c" />
+<title>Kai Remote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nata+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
 <style>
+  /* ─────────────────────────────────────────────────────────────
+     Kai Remote — a living-room control surface for Stremio Kai.
+     Dark-first: designed for a phone held in a dark room next to a
+     film. Light tokens are provided but the accent + equipment-LED
+     language stays constant across both.
+     ───────────────────────────────────────────────────────────── */
   :root {
-    --bg: #0b0d12; --surface: #161a23; --surface-2: #1f2531;
-    --text: #e8ebf2; --muted: #8b93a7; --accent: #7b5cff; --accent-2: #4ad6b4;
-    --danger: #ff5c7a; --radius: 14px;
+    --bg:        #f3f3f7;
+    --panel:     #ffffff;
+    --panel-2:   #e9eaf1;
+    --raise:     #ffffff;
+    --line:      #d9dae4;
+    --text:      #17181f;
+    --muted:     #5c5e73;
+    --faint:     #8a8ca0;
+    --accent:    #6b4dff;
+    --accent-ink:#ffffff;
+    --glow:      #6b4dff;
+    --live:      #17a67c;
+    --warn:      #c9812f;
+    --down:      #d1435f;
+    --shadow:    0 1px 2px rgba(20,20,40,.08), 0 8px 24px -12px rgba(20,20,40,.18);
+    --tc-shadow: none;
   }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:        #08090c;
+      --panel:     #101119;
+      --panel-2:   #191b25;
+      --raise:     #1f2130;
+      --line:      #262836;
+      --text:      #e8e9f1;
+      --muted:     #8b8da4;
+      --faint:     #63667c;
+      --accent:    #8b6dff;
+      --accent-ink:#0c0a1a;
+      --glow:      #9d84ff;
+      --live:      #5fd0a8;
+      --warn:      #e6a15c;
+      --down:      #e0607a;
+      --shadow:    0 1px 0 rgba(255,255,255,.03), 0 18px 40px -20px rgba(0,0,0,.7);
+      --tc-shadow: 0 0 22px rgba(157,132,255,.28);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg:        #08090c;
+    --panel:     #101119;
+    --panel-2:   #191b25;
+    --raise:     #1f2130;
+    --line:      #262836;
+    --text:      #e8e9f1;
+    --muted:     #8b8da4;
+    --faint:     #63667c;
+    --accent:    #8b6dff;
+    --accent-ink:#0c0a1a;
+    --glow:      #9d84ff;
+    --live:      #5fd0a8;
+    --warn:      #e6a15c;
+    --down:      #e0607a;
+    --shadow:    0 1px 0 rgba(255,255,255,.03), 0 18px 40px -20px rgba(0,0,0,.7);
+    --tc-shadow: 0 0 22px rgba(157,132,255,.28);
+  }
+
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; height: 100%; }
   body {
-    background: var(--bg); color: var(--text);
-    font: 15px/1.4 -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
-    display: flex; flex-direction: column;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: var(--bg);
+    color: var(--text);
+    font: 500 15px/1.45 "Nata Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overscroll-behavior: none;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
   }
+  /* Built for a phone; on anything wider it holds a phone-shaped column
+     centred on the panel ground so it never stretches into a dashboard. */
+  @media (min-width: 540px) {
+    body { max-width: 460px; margin: 0 auto; border-inline: 1px solid var(--line); }
+  }
+  [hidden] { display: none !important; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .mono { font-family: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+
+  /* ── status bar ─────────────────────────────────────────────── */
   header {
-    display: flex; align-items: center; gap: 10px;
-    padding: 12px 16px; border-bottom: 1px solid var(--surface-2);
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid var(--line);
   }
-  header h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: .3px; flex: 1; }
-  .pill { font-size: 11px; padding: 3px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
-  .pill.on { background: rgba(74,214,180,.15); color: var(--accent-2); }
-  .pill.off { background: rgba(255,92,122,.15); color: var(--danger); }
+  .brand {
+    font-weight: 700;
+    letter-spacing: .02em;
+    font-size: 15px;
+    flex: 1;
+  }
+  .brand span { color: var(--faint); font-weight: 500; }
 
-  main { flex: 1; overflow-y: auto; padding: 16px; -webkit-overflow-scrolling: touch; }
-  .panel { display: none; }
-  .panel.active { display: block; }
+  .leds { display: flex; gap: 14px; }
+  .led {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--faint);
+  }
+  .led i {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--down);
+    box-shadow: 0 0 0 0 rgba(0,0,0,0);
+    transition: background .25s, box-shadow .25s;
+  }
+  .led.on { color: var(--muted); }
+  .led.on i { background: var(--live); box-shadow: 0 0 10px 0 color-mix(in srgb, var(--live) 70%, transparent); }
+  .led.on.pulse i { animation: pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 6px 0 color-mix(in srgb, var(--live) 55%, transparent); }
+    50%      { box-shadow: 0 0 14px 2px color-mix(in srgb, var(--live) 75%, transparent); }
+  }
 
+  /* ── panels ────────────────────────────────────────────────── */
+  main {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 20px 18px 28px;
+  }
+  .screen { display: none; flex-direction: column; gap: 22px; }
+  .screen.active { display: flex; }
+
+  .group { display: flex; flex-direction: column; gap: 12px; }
+  .glabel {
+    font-size: 11px; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--faint);
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .glabel b { color: var(--muted); font-weight: 600; letter-spacing: .04em; }
+  .divider { height: 1px; background: var(--line); border: 0; margin: 2px 0; }
+
+  /* ── transport head (Now Playing hero) ─────────────────────── */
+  .transport { display: flex; flex-direction: column; gap: 10px; }
+  .tc {
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    font-size: clamp(30px, 11vw, 42px);
+    letter-spacing: -.01em;
+    display: flex; align-items: baseline; gap: 10px;
+    color: var(--text);
+  }
+  body.playing .tc { text-shadow: var(--tc-shadow); }
+  .tc-sep { color: var(--faint); font-size: .6em; }
+  #t-dur { color: var(--faint); font-size: .6em; align-self: center; }
+  .now { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.3; text-wrap: balance; }
+  .now-sub { margin: 0; color: var(--muted); font-size: 13px; }
+
+  /* ── slider ────────────────────────────────────────────────── */
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 30px; background: transparent; margin: 0;
+    --fill: 0%;
+  }
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px; border-radius: 999px;
+    background: linear-gradient(to right, var(--accent) var(--fill), var(--panel-2) var(--fill));
+  }
+  input[type="range"]::-moz-range-track {
+    height: 6px; border-radius: 999px; background: var(--panel-2);
+  }
+  input[type="range"]::-moz-range-progress { height: 6px; border-radius: 999px; background: var(--accent); }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 22px; height: 22px; margin-top: -8px;
+    border-radius: 50%; background: var(--text);
+    border: 4px solid var(--bg);
+    box-shadow: 0 2px 8px rgba(0,0,0,.35);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--text); border: 3px solid var(--bg);
+  }
+  input[type="range"].sm { height: 26px; }
+  input[type="range"].sm::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -6px; }
+  .times {
+    display: flex; justify-content: space-between;
+    font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+    font-size: 11px; color: var(--faint); letter-spacing: .02em;
+  }
+
+  /* ── primary transport keys ────────────────────────────────── */
+  .controls-primary {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr 1fr 1fr;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .key {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 14px;
+    padding: 16px 4px;
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .08s ease, background .15s;
+  }
+  .key.mono { font-family: "IBM Plex Mono", monospace; font-weight: 500; }
+  .key:active { transform: scale(.94); background: var(--panel-2); }
+  .key.play {
+    background: var(--accent); border-color: transparent; color: var(--accent-ink);
+    box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  .key.play svg { width: 24px; height: 24px; display: none; }
+  .key.play[data-state="playing"] .i-pause { display: block; }
+  .key.play[data-state="paused"] .i-play { display: block; }
+  .key.play:not([data-state]) .i-play { display: block; }
+
+  /* ── wide keys / clusters ──────────────────────────────────── */
+  .cluster { display: flex; gap: 10px; }
+  .wide-key {
+    flex: 1;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 14px;
+    padding: 15px 12px;
+    font-size: 14px; font-weight: 600;
+    transition: transform .08s ease, background .15s;
+  }
+  .wide-key:active { transform: scale(.97); background: var(--panel-2); }
+
+  /* ── segmented ─────────────────────────────────────────────── */
+  .seg {
+    display: flex;
+    background: var(--panel-2);
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .seg button {
+    flex: 1;
+    border: 0; background: transparent;
+    padding: 10px 6px;
+    border-radius: 9px;
+    font-size: 13px; font-weight: 600;
+    color: var(--muted);
+    transition: background .12s, color .12s;
+  }
+  .seg button:active { background: var(--raise); color: var(--text); }
+
+  /* ── select ────────────────────────────────────────────────── */
+  .select {
+    -webkit-appearance: none; appearance: none;
+    width: 100%;
+    background: var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b8da4' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 16px center;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 40px 14px 14px;
+    font: inherit; color: var(--text);
+  }
+
+  /* ── D-pad (Navigate) ──────────────────────────────────────── */
+  .dpad {
+    align-self: center;
+    width: min(260px, 74vw);
+    aspect-ratio: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 8px;
+    background: var(--panel-2);
+    border-radius: 32px;
+    padding: 12px;
+  }
+  .dpad button {
+    border: 0;
+    background: var(--panel);
+    border-radius: 14px;
+    font-size: 20px;
+    color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .08s, background .12s, color .12s;
+  }
+  .dpad button:active { transform: scale(.9); background: var(--raise); color: var(--text); }
+  .dpad .gap { visibility: hidden; }
+  .dpad .ok {
+    background: var(--accent); color: var(--accent-ink);
+    font-size: 14px; font-weight: 700; letter-spacing: .06em;
+  }
+  .dpad button:nth-child(2) { border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; }
+  .dpad button:nth-child(4) { border-top-right-radius: 4px; border-bottom-right-radius: 4px; }
+  .dpad button:nth-child(6) { border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+  .dpad button:nth-child(8) { border-top-left-radius: 4px; border-top-right-radius: 4px; }
+
+  .grid-keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .grid-keys.two { grid-template-columns: repeat(2, 1fr); }
+  .grid-keys button {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 13px 8px;
+    font-size: 13px; font-weight: 600;
+    transition: transform .08s, background .12s;
+  }
+  .grid-keys button:active { transform: scale(.96); background: var(--panel-2); }
+
+  /* ── Browse ────────────────────────────────────────────────── */
+  .search {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 0 14px;
+  }
+  .search svg { width: 16px; height: 16px; color: var(--faint); flex: none; }
+  .search input {
+    flex: 1; border: 0; background: transparent; color: var(--text);
+    font: inherit; padding: 14px 0;
+  }
+  .search input::placeholder { color: var(--faint); }
+
+  .crumb {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px; color: var(--faint);
+    letter-spacing: .1em; text-transform: uppercase;
+  }
+  .crumb button {
+    border: 1px solid var(--line); background: var(--panel);
+    color: var(--muted);
+    padding: 7px 12px; border-radius: 9px;
+    font-size: 12px; letter-spacing: .04em; text-transform: none;
+  }
+
+  .rail-label {
+    font-size: 12px; font-weight: 700; letter-spacing: .04em;
+    color: var(--muted);
+    margin: 18px 0 10px;
+  }
+  .rail-label:first-child { margin-top: 4px; }
+  .rail {
+    display: flex; gap: 12px; overflow-x: auto;
+    padding-bottom: 6px;
+    scroll-snap-type: x proximity;
+  }
+  .rail::-webkit-scrollbar { display: none; }
+  .poster {
+    flex: 0 0 104px;
+    scroll-snap-align: start;
+  }
+  .poster .art, .poster .cap {
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .08s, opacity .12s;
+  }
+  .poster .art:active, .poster .cap:active { transform: scale(.94); opacity: .6; }
+  .poster .art {
+    width: 104px; height: 156px;
+    border-radius: 10px;
+    background: var(--panel-2) center/cover no-repeat;
+    border: 1px solid var(--line);
+  }
+  .poster .cap {
+    font-size: 11px; color: var(--muted);
+    margin-top: 6px; line-height: 1.3;
+    display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .poster .cap { text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 2px; }
+
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .row {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    transition: transform .08s, background .12s;
+  }
+  .row:active { transform: scale(.985); background: var(--panel-2); }
+  .row .art {
+    width: 40px; height: 58px; border-radius: 6px; flex: none;
+    background: var(--panel-2) center/cover no-repeat;
+  }
+  .row .body { flex: 1; min-width: 0; }
+  .row .n {
+    font-weight: 600; font-size: 14px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .row .d { font-size: 12px; color: var(--faint); margin-top: 2px; }
+  .row .ix {
+    font-family: "IBM Plex Mono", monospace; font-size: 12px;
+    color: var(--faint); flex: none;
+  }
+  .empty {
+    text-align: center; color: var(--faint);
+    padding: 48px 20px; font-size: 13px; line-height: 1.6;
+  }
+
+  /* ── tab bar ───────────────────────────────────────────────── */
   nav.tabs {
-    display: flex; border-top: 1px solid var(--surface-2); background: var(--surface);
+    flex: none;
+    display: flex;
+    gap: 4px;
+    padding: 8px 14px calc(10px + env(safe-area-inset-bottom));
+    background: var(--panel);
+    border-top: 1px solid var(--line);
   }
   nav.tabs button {
-    flex: 1; background: none; border: 0; color: var(--muted);
-    padding: 12px 4px 16px; font-size: 12px; font-weight: 600;
+    flex: 1;
+    border: 0; background: transparent;
+    padding: 10px 4px 8px;
+    border-radius: 10px;
+    font-size: 12px; font-weight: 600; letter-spacing: .02em;
+    color: var(--faint);
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    transition: color .15s, background .15s;
   }
-  nav.tabs button.active { color: var(--accent); }
+  nav.tabs button svg { width: 20px; height: 20px; }
+  nav.tabs button.active { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 
-  .card { background: var(--surface); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
-  .title-big { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
-  .sub { color: var(--muted); font-size: 13px; }
-
-  .scrub { width: 100%; margin: 14px 0 6px; accent-color: var(--accent); }
-  .times { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
-
-  .row { display: flex; gap: 10px; margin-top: 12px; }
-  .row.wrap { flex-wrap: wrap; }
-  button.btn {
-    flex: 1; min-width: 64px; background: var(--surface-2); border: 0; color: var(--text);
-    padding: 14px 10px; border-radius: 12px; font-size: 14px; font-weight: 600;
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
   }
-  button.btn:active { background: #2b3446; }
-  button.btn.primary { background: var(--accent); }
-  button.btn.wide { flex: 100%; }
-  button.btn.sm { padding: 10px 8px; font-size: 13px; }
-
-  .dpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 280px; margin: 8px auto; }
-  .dpad button { aspect-ratio: 1; font-size: 20px; }
-  .dpad .mid { background: var(--accent); }
-  .dpad .blank { visibility: hidden; }
-
-  select, input[type=text] {
-    width: 100%; background: var(--surface-2); border: 1px solid #2b3140; color: var(--text);
-    padding: 12px; border-radius: 10px; font-size: 15px; margin-top: 8px;
-  }
-  label.lbl { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
-
-  .list-item {
-    display: flex; align-items: center; gap: 12px; padding: 12px;
-    background: var(--surface); border-radius: 12px; margin-bottom: 8px;
-  }
-  .list-item:active { background: var(--surface-2); }
-  .list-item img { width: 44px; height: 62px; object-fit: cover; border-radius: 6px; background: var(--surface-2); }
-  .list-item .meta { flex: 1; min-width: 0; }
-  .list-item .meta .n { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .list-item .meta .d { font-size: 12px; color: var(--muted); }
-  .rowlabel { font-size: 13px; font-weight: 700; color: var(--muted); margin: 16px 0 8px; }
-  .hscroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
-  .hscroll .poster { flex: 0 0 96px; }
-  .hscroll .poster img { width: 96px; height: 140px; object-fit: cover; border-radius: 8px; background: var(--surface-2); }
-  .hscroll .poster .n { font-size: 11px; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .empty { color: var(--muted); text-align: center; padding: 30px 10px; }
-  .crumb { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-  .crumb button { background: var(--surface-2); border: 0; color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 13px; }
 </style>
 </head>
 <body>
 <header>
-  <h1>Stremio&nbsp;Kai Remote</h1>
-  <span class="pill" id="pill-mpv">player</span>
-  <span class="pill" id="pill-ui">ui</span>
+  <div class="brand">Kai <span>Remote</span></div>
+  <div class="leds">
+    <span class="led" id="led-mpv"><i></i>Player</span>
+    <span class="led" id="led-ui"><i></i>Link</span>
+  </div>
 </header>
 
 <main>
-  <!-- NOW PLAYING ------------------------------------------------------->
-  <section class="panel active" id="panel-play">
-    <div class="card">
-      <p class="title-big" id="np-title">Nothing playing</p>
-      <p class="sub" id="np-sub">Open the Browse tab to start something.</p>
-      <input class="scrub" type="range" id="scrub" min="0" max="1000" value="0" />
-      <div class="times"><span id="t-cur">0:00</span><span id="t-dur">0:00</span></div>
-
-      <div class="row">
-        <button class="btn sm" data-cmd="seek_relative" data-args='{"secs":-85}'>⏮ 85s</button>
-        <button class="btn sm" data-cmd="seek_relative" data-args='{"secs":-10}'>-10s</button>
-        <button class="btn primary" id="btn-pause" data-cmd="toggle_pause">Pause</button>
-        <button class="btn sm" data-cmd="seek_relative" data-args='{"secs":10}'>+10s</button>
-        <button class="btn sm" data-cmd="seek_relative" data-args='{"secs":85}'>85s ⏭</button>
+  <!-- ── NOW PLAYING ──────────────────────────────────────────── -->
+  <section class="screen active" id="screen-play">
+    <div class="transport">
+      <div class="tc">
+        <span id="t-cur">0:00</span><span class="tc-sep">/</span><span id="t-dur">0:00</span>
       </div>
+      <p class="now" id="np-title">Nothing playing</p>
+      <p class="now-sub" id="np-sub">Start something on the TV, or use Browse.</p>
+      <input class="scrubber" id="scrub" type="range" min="0" max="1000" value="0" aria-label="Seek position" />
+      <div class="times mono"><span id="lbl-cur">0:00</span><span id="lbl-rem">0:00</span></div>
+    </div>
 
-      <div class="row">
-        <button class="btn" data-cmd="perform_skip">Skip Intro/Outro</button>
-        <button class="btn" id="btn-next" data-cmd="player_next_video">Next Episode ▶</button>
+    <div class="controls-primary">
+      <button class="key mono" data-cmd="seek_relative" data-args='{"secs":-85}'>−85</button>
+      <button class="key mono" data-cmd="seek_relative" data-args='{"secs":-10}'>−10</button>
+      <button class="key play" id="btn-pause" data-cmd="toggle_pause" aria-label="Play or pause">
+        <svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+      </button>
+      <button class="key mono" data-cmd="seek_relative" data-args='{"secs":10}'>+10</button>
+      <button class="key mono" data-cmd="seek_relative" data-args='{"secs":85}'>+85</button>
+    </div>
+
+    <div class="cluster">
+      <button class="wide-key" data-cmd="perform_skip">Skip intro / outro</button>
+      <button class="wide-key" id="btn-next" data-cmd="player_next_video">Next episode</button>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="group">
+      <div class="glabel">Volume <b id="vol-val">50%</b></div>
+      <input class="scrubber sm" id="vol" type="range" min="0" max="130" value="50" aria-label="Volume" />
+      <div class="seg">
+        <button data-cmd="mute">Mute</button>
+        <button data-cmd="set_speed" data-args='{"value":1}'>1&times;</button>
+        <button data-cmd="set_speed" data-args='{"value":1.5}'>1.5&times;</button>
+        <button data-cmd="set_speed" data-args='{"value":2}'>2&times;</button>
       </div>
     </div>
 
-    <div class="card">
-      <label class="lbl">Volume <span id="vol-val"></span></label>
-      <input class="scrub" type="range" id="vol" min="0" max="130" value="100" />
-      <div class="row">
-        <button class="btn sm" data-cmd="mute">Mute</button>
-        <button class="btn sm" data-cmd="set_speed" data-args='{"value":1}'>1x</button>
-        <button class="btn sm" data-cmd="set_speed" data-args='{"value":1.5}'>1.5x</button>
-        <button class="btn sm" data-cmd="set_speed" data-args='{"value":2}'>2x</button>
-      </div>
+    <div class="group">
+      <div class="glabel">Audio</div>
+      <select id="sel-audio" class="select" aria-label="Audio track"></select>
     </div>
-
-    <div class="card">
-      <label class="lbl">Audio</label>
-      <select id="sel-audio"></select>
-      <label class="lbl">Subtitles</label>
-      <select id="sel-sub"></select>
+    <div class="group">
+      <div class="glabel">Subtitles</div>
+      <select id="sel-sub" class="select" aria-label="Subtitle track"></select>
     </div>
   </section>
 
-  <!-- NAVIGATE --------------------------------------------------------->
-  <section class="panel" id="panel-nav">
-    <div class="card">
-      <div class="dpad">
-        <div class="blank"></div>
-        <button class="btn" data-cmd="nav_dpad" data-args='{"dir":"up"}'>▲</button>
-        <div class="blank"></div>
-        <button class="btn" data-cmd="nav_dpad" data-args='{"dir":"left"}'>◀</button>
-        <button class="btn mid" data-cmd="nav_ok">OK</button>
-        <button class="btn" data-cmd="nav_dpad" data-args='{"dir":"right"}'>▶</button>
-        <div class="blank"></div>
-        <button class="btn" data-cmd="nav_dpad" data-args='{"dir":"down"}'>▼</button>
-        <div class="blank"></div>
-      </div>
-      <div class="row">
-        <button class="btn" data-cmd="nav_back">◁ Back</button>
-        <button class="btn" data-cmd="nav_home">Home</button>
+  <!-- ── NAVIGATE ─────────────────────────────────────────────── -->
+  <section class="screen" id="screen-nav">
+    <div class="dpad">
+      <span class="gap"></span>
+      <button data-cmd="nav_dpad" data-args='{"dir":"up"}' aria-label="Up">&#9650;</button>
+      <span class="gap"></span>
+      <button data-cmd="nav_dpad" data-args='{"dir":"left"}' aria-label="Left">&#9664;</button>
+      <button class="ok" data-cmd="nav_ok">OK</button>
+      <button data-cmd="nav_dpad" data-args='{"dir":"right"}' aria-label="Right">&#9654;</button>
+      <span class="gap"></span>
+      <button data-cmd="nav_dpad" data-args='{"dir":"down"}' aria-label="Down">&#9660;</button>
+      <span class="gap"></span>
+    </div>
+
+    <div class="grid-keys two">
+      <button data-cmd="nav_back">Back</button>
+      <button data-cmd="nav_home">Home</button>
+    </div>
+
+    <div class="group">
+      <div class="glabel">Go to</div>
+      <div class="grid-keys">
+        <button data-cmd="nav_page" data-args='{"page":"#/"}'>Board</button>
+        <button data-cmd="nav_page" data-args='{"page":"#/discover"}'>Discover</button>
+        <button data-cmd="nav_page" data-args='{"page":"#/library"}'>Library</button>
+        <button data-cmd="nav_page" data-args='{"page":"#/calendar"}'>Calendar</button>
+        <button data-cmd="nav_page" data-args='{"page":"#/addons"}'>Add-ons</button>
+        <button data-cmd="nav_page" data-args='{"page":"#/settings"}'>Settings</button>
       </div>
     </div>
-    <div class="card">
-      <label class="lbl">Pages</label>
-      <div class="row wrap">
-        <button class="btn sm" data-cmd="nav_page" data-args='{"page":"#/"}'>Board</button>
-        <button class="btn sm" data-cmd="nav_page" data-args='{"page":"#/discover"}'>Discover</button>
-        <button class="btn sm" data-cmd="nav_page" data-args='{"page":"#/library"}'>Library</button>
-        <button class="btn sm" data-cmd="nav_page" data-args='{"page":"#/calendar"}'>Calendar</button>
-        <button class="btn sm" data-cmd="nav_page" data-args='{"page":"#/settings"}'>Settings</button>
-      </div>
-    </div>
-    <div class="card">
-      <label class="lbl">Player</label>
-      <div class="row wrap">
-        <button class="btn sm" data-cmd="toggle_subs_menu">Subs menu</button>
-        <button class="btn sm" data-cmd="toggle_audio_menu">Audio menu</button>
-        <button class="btn sm" data-cmd="toggle_fullscreen">Fullscreen</button>
-        <button class="btn sm" data-cmd="stop_playback">Stop</button>
+
+    <div class="group">
+      <div class="glabel">Player</div>
+      <div class="grid-keys two">
+        <button data-cmd="toggle_subs_menu">Subtitles menu</button>
+        <button data-cmd="toggle_audio_menu">Audio menu</button>
+        <button data-cmd="toggle_fullscreen">Fullscreen</button>
+        <button data-cmd="stop_playback">Stop</button>
       </div>
     </div>
   </section>
 
-  <!-- BROWSE --------------------------------------------------------->
-  <section class="panel" id="panel-browse">
-    <div class="card">
-      <input type="text" id="q" placeholder="Search Stremio…" />
+  <!-- ── BROWSE ───────────────────────────────────────────────── -->
+  <section class="screen" id="screen-browse">
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="q" type="text" placeholder="Search films & series" autocomplete="off" autocapitalize="none" />
     </div>
-    <div id="browse-body"><div class="empty">Open the Board on your PC, or search above.</div></div>
+    <div id="browse-body">
+      <div class="empty">Open the Board or Library on the TV and it shows up here.</div>
+    </div>
   </section>
 </main>
 
 <nav class="tabs">
-  <button class="active" data-panel="panel-play">Now&nbsp;Playing</button>
-  <button data-panel="panel-nav">Navigate</button>
-  <button data-panel="panel-browse">Browse</button>
+  <button class="active" data-panel="screen-play">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    Playing
+  </button>
+  <button data-panel="screen-nav">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/></svg>
+    Navigate
+  </button>
+  <button data-panel="screen-browse">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="10" rx="1.5"/></svg>
+    Browse
+  </button>
 </nav>
 
 <script>
 (function () {
   "use strict";
 
-  // ---- token: lift #t=... from the URL, then strip it ------------------
+  // ── token: lift #t=… from the URL, then strip it ────────────────
   var TOKEN = "";
   try {
     var m = location.hash.match(/[#&]t=([^&]+)/);
@@ -213,11 +587,16 @@
   function fmt(s) {
     if (s == null || isNaN(s)) return "0:00";
     s = Math.max(0, Math.round(s));
-    var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
-    return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0");
+    var h = Math.floor(s / 3600), mm = Math.floor((s % 3600) / 60), x = s % 60;
+    return (h ? h + ":" + String(mm).padStart(2, "0") : mm) + ":" + String(x).padStart(2, "0");
+  }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
   }
 
-  // ---- command sender ------------------------------------------------
+  // ── command sender ─────────────────────────────────────────────
   function send(cmd, args) {
     return fetch("/cmd", {
       method: "POST",
@@ -232,48 +611,55 @@
     var args = {};
     try { args = b.dataset.args ? JSON.parse(b.dataset.args) : {}; } catch (x) {}
     send(b.dataset.cmd, args);
-    b.animate([{ opacity: .5 }, { opacity: 1 }], 150);
+    if (b.animate) b.animate([{ opacity: .55 }, { opacity: 1 }], 160);
   });
 
-  // ---- tabs --------------------------------------------------------
+  // ── tabs ───────────────────────────────────────────────────────
   document.querySelectorAll("nav.tabs button").forEach(function (btn) {
     btn.addEventListener("click", function () {
       document.querySelectorAll("nav.tabs button").forEach(function (x) { x.classList.remove("active"); });
-      document.querySelectorAll(".panel").forEach(function (x) { x.classList.remove("active"); });
+      document.querySelectorAll(".screen").forEach(function (x) { x.classList.remove("active"); });
       btn.classList.add("active");
       q("#" + btn.dataset.panel).classList.add("active");
     });
   });
 
-  // ---- scrub + volume (commit on release) --------------------------
-  var scrub = q("#scrub"), scrubbing = false, lastDur = 0;
-  scrub.addEventListener("input", function () { scrubbing = true; });
+  // ── scrubber + volume ──────────────────────────────────────────
+  var scrub = q("#scrub"), scrubbing = false;
+  function setFill(el, pct) { el.style.setProperty("--fill", Math.max(0, Math.min(100, pct)) + "%"); }
+  scrub.addEventListener("input", function () {
+    scrubbing = true;
+    setFill(scrub, scrub.value / 10);
+    if (lastDur) q("#lbl-cur").textContent = fmt((scrub.value / 1000) * lastDur);
+  });
   scrub.addEventListener("change", function () {
     scrubbing = false;
     send("seek_percent", { pct: (scrub.value / 1000) * 100 });
   });
+
   var vol = q("#vol"), volTimer = null;
   vol.addEventListener("input", function () {
     q("#vol-val").textContent = vol.value + "%";
+    setFill(vol, (vol.value / 130) * 100);
     clearTimeout(volTimer);
-    volTimer = setTimeout(function () { send("set_volume", { value: +vol.value }); }, 120);
+    volTimer = setTimeout(function () { send("set_volume", { value: +vol.value }); }, 110);
   });
 
-  // ---- audio / sub selects ---------------------------------------
+  // ── audio / subtitle selects ───────────────────────────────────
   q("#sel-audio").addEventListener("change", function () { send("set_audio_track", { id: this.value }); });
   q("#sel-sub").addEventListener("change", function () { send("set_sub_track", { id: this.value }); });
-
   function fillTracks(sel, tracks, current, noneLabel) {
     if (document.activeElement === sel) return;
     var html = noneLabel ? '<option value="no">' + noneLabel + "</option>" : "";
     (tracks || []).forEach(function (t) {
-      var name = (t.lang ? t.lang + " " : "") + (t.title || "Track " + t.id);
-      html += '<option value="' + t.id + '"' + (t.id == current ? " selected" : "") + ">" + name + "</option>";
+      var name = (t.lang ? t.lang.toUpperCase() + "  " : "") + (t.title || "Track " + t.id);
+      html += '<option value="' + t.id + '"' + (t.id == current ? " selected" : "") + ">" + esc(name) + "</option>";
     });
+    if (!(tracks || []).length && !noneLabel) html = '<option>—</option>';
     sel.innerHTML = html;
   }
 
-  // ---- search ---------------------------------------------------
+  // ── search ─────────────────────────────────────────────────────
   var qi = q("#q"), qTimer = null;
   qi.addEventListener("input", function () {
     clearTimeout(qTimer);
@@ -282,133 +668,185 @@
     qTimer = setTimeout(function () { send("search", { query: v }); }, 500);
   });
 
-  // ---- browse rendering --------------------------------------------
-  var browseBody = q("#browse-body");
-  var lastBrowseJSON = "";
+  // ── browse rendering ───────────────────────────────────────────
+  var browseBody = q("#browse-body"), lastBrowseKey = "";
+  function art(url) {
+    if (!url) return "";
+    // style="..." is double-quoted, so quote the url() with single quotes and
+    // percent-encode anything that could break out of either. (JSON.stringify
+    // here injected literal " and killed the style attribute.)
+    var safe = String(url).replace(/['"()\\\s]/g, function (c) {
+      return "%" + c.charCodeAt(0).toString(16).toUpperCase();
+    });
+    return " style=\"background-image:url('" + safe + "')\"";
+  }
+
   function renderBrowse(b) {
     if (!b) return;
     var key = JSON.stringify(b);
-    if (key === lastBrowseJSON) return;
-    lastBrowseJSON = key;
-
+    if (key === lastBrowseKey) return;
+    try {
+      renderBrowseInner(b);
+      lastBrowseKey = key; // only cache on success, so a transient failure retries
+    } catch (e) {
+      // never let a scraper-shape surprise freeze the tab on its last render
+      browseBody.innerHTML =
+        '<div class="empty" style="color:#e2564d">Browse render failed: ' +
+        esc(String((e && e.message) || e)) + "</div>";
+    }
+  }
+  function renderBrowseInner(b) {
     var h = "";
     if (b.view === "DETAIL" || b.view === "STREAMS") {
-      h += '<div class="crumb"><button data-cmd="nav_back">◁ Back</button><b>Episodes &amp; Streams</b></div>';
-      (b.episodes || []).forEach(function (ep) {
-        h += '<div class="list-item" data-pick=\'' + esc(JSON.stringify({ season: ep.season, episode: ep.episode })) + "'>" +
-          '<div class="meta"><div class="n">' + esc(ep.title || ep.label) + "</div>" +
-          '<div class="d">' + (ep.season != null ? "S" + ep.season + " E" + ep.episode : "") + "</div></div></div>";
-      });
+      h += '<div class="crumb"><button data-cmd="nav_back">Back</button> Episodes &amp; streams</div>';
+      if ((b.episodes || []).length) {
+        h += '<div class="rail-label">Episodes</div><div class="list">';
+        b.episodes.forEach(function (ep) {
+          h += '<div class="row" data-pick=\'' + esc(JSON.stringify({ season: ep.season, episode: ep.episode, ordinal: ep.ordinal })) + "'>" +
+            (ep.season != null ? '<span class="ix">S' + ep.season + '·E' + ep.episode + "</span>" : '<span class="ix">' + ((ep.ordinal || 0) + 1) + "</span>") +
+            '<div class="body"><div class="n">' + esc(ep.title || ep.label) + "</div></div></div>";
+        });
+        h += "</div>";
+      }
       if ((b.streams || []).length) {
-        h += '<div class="rowlabel">Streams</div>';
+        h += '<div class="rail-label">Streams</div><div class="list">';
         b.streams.forEach(function (s) {
-          h += '<div class="list-item" data-stream="' + s.index + '">' +
-            '<div class="meta"><div class="n">' + esc(s.addon || "Stream " + (s.index + 1)) + "</div>" +
+          h += '<div class="row" data-stream="' + s.index + '">' +
+            '<span class="ix">' + (s.index + 1) + "</span>" +
+            '<div class="body"><div class="n">' + esc(s.addon || "Stream " + (s.index + 1)) + "</div>" +
             '<div class="d">' + esc(s.label) + "</div></div></div>";
         });
+        h += "</div>";
       }
-    } else if (b.boardRows && b.boardRows.length) {
+      if (!(b.episodes || []).length && !(b.streams || []).length) {
+        h += '<div class="empty">Waiting for the TV to load this title…</div>';
+      }
+    } else if ((b.boardRows || []).length) {
       b.boardRows.forEach(function (row) {
-        h += '<div class="rowlabel">' + esc(row.rowTitle || "") + "</div><div class=\"hscroll\">";
-        row.items.forEach(function (it) {
-          h += posterCard(it);
-        });
+        h += '<div class="rail-label">' + esc(row.rowTitle || "") + '</div><div class="rail">';
+        row.items.forEach(function (it) { h += posterCard(it, row.continueWatching); });
         h += "</div>";
       });
     } else if ((b.grid || b.searchResults || []).length) {
       var g = b.grid || b.searchResults;
+      h += '<div class="list">';
       g.forEach(function (it) {
-        h += '<div class="list-item" data-open=\'' + esc(JSON.stringify({ type: it.type, id: it.metaId })) + "'>" +
-          '<img src="' + esc(it.poster || "") + '" onerror="this.style.visibility=\'hidden\'" />' +
-          '<div class="meta"><div class="n">' + esc(it.name) + "</div>" +
-          '<div class="d">' + esc(it.type || "") + "</div></div></div>";
+        h += '<div class="row" data-item=\'' + esc(JSON.stringify(itemPayload(it))) + "'>" +
+          '<div class="art"' + art(it.poster) + "></div>" +
+          '<div class="body"><div class="n">' + esc(it.name) + "</div>" +
+          (it.type ? '<div class="d">' + esc(it.type) + "</div>" : "") + "</div></div>";
       });
+      h += "</div>";
     } else {
-      h = '<div class="empty">Nothing to show for this page.<br>Navigate on the PC or search.</div>';
+      h = '<div class="empty">Open the Board or Library on the TV and it shows up here.</div>';
+    }
+    // Diagnostics only surface when a scraper errored or the expected list came
+    // back empty (scrapers.js only attaches _debug in that case).
+    if (b._scrapeErrors || b._debug) {
+      h += '<div class="empty" style="text-align:left;font-family:monospace;font-size:10px;color:#e2564d;white-space:pre-wrap;word-break:break-all">' +
+        esc(JSON.stringify({ scrapeErrors: b._scrapeErrors, debug: b._debug }, null, 1)) +
+        "</div>";
     }
     browseBody.innerHTML = h;
   }
-  function posterCard(it) {
-    return '<div class="poster" data-open=\'' + esc(JSON.stringify({ type: it.type, id: it.metaId })) + "'>" +
-      '<img src="' + esc(it.poster || "") + '" onerror="this.style.visibility=\'hidden\'" />' +
-      '<div class="n">' + esc(it.name) + "</div></div>";
+  function itemPayload(it) {
+    return { metaId: it.metaId, type: it.type, name: it.name, ref: it.ref };
   }
-  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
-    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-  }); }
-
+  function posterCard(it, cw) {
+    // .art = primary tap (resume for Continue Watching, else open details),
+    // .cap = always open details — mirrors Stremio's own card.
+    return '<div class="poster" data-item=\'' + esc(JSON.stringify(itemPayload(it))) +
+      "' data-cw=\"" + (cw ? "1" : "") + "\">" +
+      '<div class="art"' + art(it.poster) + "></div>" +
+      '<div class="cap" data-role="details">' + esc(it.name) + "</div></div>";
+  }
   browseBody.addEventListener("click", function (e) {
-    var open = e.target.closest("[data-open]");
-    if (open) { var o = JSON.parse(open.dataset.open); if (o.id) send("open_detail", o); return; }
+    var item = e.target.closest("[data-item]");
+    if (item) {
+      var o = JSON.parse(item.dataset.item);
+      if (e.target.closest("[data-role='details']")) send("open_details", o);
+      else send(item.dataset.cw ? "instant_resume" : "open_item", o);
+      return;
+    }
     var pick = e.target.closest("[data-pick]");
     if (pick) { send("pick_episode", JSON.parse(pick.dataset.pick)); return; }
     var st = e.target.closest("[data-stream]");
     if (st) { send("launch_stream", { index: +st.dataset.stream }); return; }
   });
 
-  // ---- state stream (SSE with poll fallback) ----------------------
+  // ── state ──────────────────────────────────────────────────────
+  var lastDur = 0, wasPlayer = false;
+  function led(id, on, pulse) {
+    var el = q(id);
+    el.classList.toggle("on", !!on);
+    el.classList.toggle("pulse", !!on && !!pulse);
+  }
   function applyState(s) {
     var c = s.connections || {}, p = s.player || {}, w = s.webmod || {};
-    setPill("#pill-mpv", c.mpv, "player");
-    setPill("#pill-ui", c.webmod, "ui");
+    led("#led-mpv", c.mpv, !p.pause && p.duration);
+    led("#led-ui", c.webmod, false);
 
-    // now playing
     var route = w.route || {};
     var playing = route.view === "PLAYER" || (p.duration && !p.idle);
-    q("#np-title").textContent = p.media_title || (w.now_playing_meta && w.now_playing_meta.title) || (playing ? "Playing" : "Nothing playing");
+    document.body.classList.toggle("playing", !!playing && !p.pause);
+
+    q("#np-title").textContent =
+      p.media_title || (w.now_playing_meta && w.now_playing_meta.title) ||
+      (playing ? "Playing" : "Nothing playing");
     q("#np-sub").textContent = playing
-      ? (p.pause ? "Paused" : "Playing") + (p.speed && p.speed !== 1 ? "  ·  " + p.speed + "x" : "")
-      : "Open the Browse tab to start something.";
-    q("#btn-pause").textContent = p.pause ? "Play" : "Pause";
-    q("#btn-next").style.display = (w.player_ui && w.player_ui.nextVideoAvailable) ? "" : "none";
+      ? (p.pause ? "Paused" : "Playing") + (p.speed && p.speed !== 1 ? "   ·   " + p.speed + "×" : "")
+      : "Start something on the TV, or use Browse.";
+
+    var pb = q("#btn-pause");
+    pb.dataset.state = p.pause ? "paused" : "playing";
+
+    var next = w.player_ui && w.player_ui.nextVideoAvailable;
+    q("#btn-next").hidden = !next;
 
     if (!scrubbing && p.duration) {
       lastDur = p.duration;
-      scrub.value = Math.round(((p.time_pos || 0) / p.duration) * 1000);
+      var pct = ((p.time_pos || 0) / p.duration) * 1000;
+      scrub.value = Math.round(pct);
+      setFill(scrub, pct / 10);
       q("#t-cur").textContent = fmt(p.time_pos);
       q("#t-dur").textContent = fmt(p.duration);
+      q("#lbl-cur").textContent = fmt(p.time_pos);
+      q("#lbl-rem").textContent = "−" + fmt(p.duration - (p.time_pos || 0));
+    } else if (!p.duration) {
+      q("#t-cur").textContent = "0:00";
+      q("#t-dur").textContent = "0:00";
     }
+
     if (document.activeElement !== vol && p.volume != null) {
       vol.value = Math.round(p.volume);
-      q("#vol-val").textContent = Math.round(p.volume) + "%" + (p.mute ? " (muted)" : "");
+      setFill(vol, (p.volume / 130) * 100);
+      q("#vol-val").textContent = Math.round(p.volume) + "%" + (p.mute ? "  ·  muted" : "");
     }
     fillTracks(q("#sel-audio"), p.audio_tracks, p.aid, null);
     fillTracks(q("#sel-sub"), p.sub_tracks, p.sid, "Off");
 
     renderBrowse(w.browse);
 
-    // auto-jump to Now Playing when playback starts
-    if (route.view === "PLAYER" && !applyState._wasPlayer) {
-      document.querySelector('nav.tabs button[data-panel="panel-play"]').click();
+    if (route.view === "PLAYER" && !wasPlayer) {
+      document.querySelector('nav.tabs button[data-panel="screen-play"]').click();
     }
-    applyState._wasPlayer = route.view === "PLAYER";
-  }
-  function setPill(sel, ok, label) {
-    var el = q(sel);
-    el.textContent = label;
-    el.className = "pill " + (ok ? "on" : "off");
+    wasPlayer = route.view === "PLAYER";
   }
 
-  var es = null, lastSeq = -1;
+  // ── transport: SSE with poll fallback ──────────────────────────
+  var es = null, lastSeq = -1, polling = false;
   function connectSSE() {
     try { es && es.close(); } catch (e) {}
-    var url = "/events" + (TOKEN ? "?t=" + encodeURIComponent(TOKEN) : "");
-    es = new EventSource(url);
+    es = new EventSource("/events" + (TOKEN ? "?t=" + encodeURIComponent(TOKEN) : ""));
     es.onmessage = function (ev) {
-      try {
-        var s = JSON.parse(ev.data);
-        lastSeq = s.seq;
-        applyState(s);
-      } catch (e) {}
+      try { var s = JSON.parse(ev.data); lastSeq = s.seq; applyState(s); } catch (e) {}
     };
     es.onerror = function () {
-      setPill("#pill-mpv", false, "player");
-      setPill("#pill-ui", false, "ui");
-      // EventSource auto-reconnects; if it's truly dead, fall back to polling.
+      led("#led-mpv", false, false);
+      led("#led-ui", false, false);
       if (es.readyState === 2) { es.close(); pollFallback(); }
     };
   }
-  var polling = false;
   function pollFallback() {
     if (polling) return;
     polling = true;
@@ -417,14 +855,13 @@
         .then(function (r) { return r.json(); })
         .then(function (s) { lastSeq = s.seq; applyState(s); })
         .catch(function () {})
-        .finally(function () {
-          if (polling) setTimeout(tick, 1000);
-        });
+        .finally(function () { if (polling) setTimeout(tick, 1000); });
     })();
-    // periodically try to restore SSE
     setTimeout(function () { polling = false; connectSSE(); }, 20000);
   }
 
+  setFill(scrub, 0);
+  setFill(vol, (50 / 130) * 100);
   connectSSE();
 })();
 </script>

@@ -7,3 +7,9 @@ __pycache__/
 
 # mpv log
 portable_config/LOG.txt
+
+# webmods console error dumps
+portable_config/errors-*.txt
+
+# per-title track picks, written at runtime
+portable_config/scripts/smart-track-selector/track_preferences.json

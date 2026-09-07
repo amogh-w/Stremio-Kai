@@ -5,7 +5,9 @@
  *              commands, actuates them, and POSTs route + scraped state back.
  *              Also pushes the Settings-UI remote config down to
  *              scripts/remote-control/main.lua via the WebView bridge.
- * @version 1.0.0
+ * @version 1.1.0
+ * @changelog 1.1.0 - per-scraper error guards in buildState(); errors surface in
+ *            browse._scrapeErrors for phone-side diagnosis.
  * @author allecsc / Stremio Kai
  *
  * @requires window.KaiRemote.SEL / .Actuators / .Scrapers  (Remote/*.js)
@@ -95,16 +97,25 @@
     const route = window.RouteDetector
       ? window.RouteDetector.getRouteState()
       : { view: "UNKNOWN" };
-    let browse = {},
-      playerUi = {},
-      nowPlaying = {};
-    try {
-      browse = window.KaiRemote.Scrapers.browse();
-      playerUi = window.KaiRemote.Scrapers.playerUi();
-      nowPlaying = window.KaiRemote.Scrapers.nowPlayingMeta();
-    } catch (e) {
-      /* scrapers are best-effort */
-    }
+    // One guard per scraper: a throw in browse() must not silently blank the
+    // other two (and vice-versa). Errors surface in `browse._scrapeErrors` so
+    // the phone can show them instead of just an empty placeholder.
+    const errs = {};
+    const safe = (fn, k) => {
+      try {
+        return fn();
+      } catch (e) {
+        errs[k] = String((e && e.message) || e);
+        return {};
+      }
+    };
+    const browse = safe(() => window.KaiRemote.Scrapers.browse(), "browse");
+    const playerUi = safe(() => window.KaiRemote.Scrapers.playerUi(), "playerUi");
+    const nowPlaying = safe(
+      () => window.KaiRemote.Scrapers.nowPlayingMeta(),
+      "nowPlaying",
+    );
+    if (Object.keys(errs).length) browse._scrapeErrors = errs;
     return { route, browse, player_ui: playerUi, now_playing_meta: nowPlaying };
   }
 
