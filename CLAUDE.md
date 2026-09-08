@@ -94,7 +94,7 @@ supervised by `scripts/remote-control/main.lua` using the notify_skip subprocess
   via ctypes `CreateFileW` on Windows) — real playback state via `observe_property`, plus all transport
   commands (`MPV_COMMANDS` table in server.py). Default HTTP port is **5000**.
 - **server ↔ webmod** — `webmods/Remote/remote-client.js` long-polls `GET /webmod/poll` for commands mpv
-  IPC can't do (route nav, catalog/episode/stream scraping, synthetic events, stream launch) and POSTs
+  IPC can't do (route nav, catalog/episode/stream scraping, element clicks, stream launch) and POSTs
   `RouteDetector` state + scraped lists to `POST /webmod/state`. Actuation lives in `actuators.js`
   (adapted from `navigation.js`), scraping in `scrapers.js`, and **every hashed class name is isolated in
   `selectors.js`** — re-verify it on each community-v5 rebase.

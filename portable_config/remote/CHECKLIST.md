@@ -114,55 +114,45 @@ Play a movie, then from the phone:
 
 ## Known issues & further work
 
-### 1. D-pad grid navigation needs one physical click per session  *(open — biggest gap)*
+### 1. WebView2 focus — resolved by removing the D-pad
 
-Off the player, arrow commands from the phone only scroll / don't enter the
-catalogue grid until the user physically clicks the Stremio window once. After
-that, everything works for the rest of the session.
+Background: driving Stremio's on-screen focus ring from the phone (arrow keys →
+`navigation.js` spatial nav) only worked after the user physically clicked the
+Stremio window once per session. `_activate_window()` foregrounds the top-level
+window but gives the WebView2 (Chromium) child neither OS input focus nor
+[transient user activation], and `element.click()` from a webmod is
+`isTrusted:false` so JS can't self-fix it. A synthesized `SendInput` /
+`PostMessage` click and a `SetFocus` parent-chain walk were both tried and
+reverted.
 
-Root cause: `_activate_window()` (`server.py`) foregrounds the top-level window,
-but that gives the WebView2 (Chromium) child neither OS input focus nor
-[transient user activation]. `navigation.js`'s spatial-nav keydown handler and
-React's own focus machinery need the web surface truly focused. `element.click()`
-from a webmod is `isTrusted:false` so JS can't self-fix it.
+Decision: the D-pad / `nav_dpad` / `nav_ok` were **removed** (v1.2.0). They
+duplicated Browse, which navigates the catalogue by real element clicks + hash
+nav and needs no window focus. No remaining command drives Stremio's focus ring,
+so the "click the window once" limitation no longer applies to anything.
 
-What was tried this round and **reverted** (didn't hold up):
-- `SendInput` / `PostMessage(WM_LBUTTONDOWN/UP)` synthesized click into the
-  render-widget HWND. The click *did* land and grant focus, but it kept hitting
-  the Stremio logo (`div.logo-container-jteMT`, top-left) → navigation.js routes
-  a logo click to Board, so every command bounced you home. A webmod-provided
-  "safe point" (gap in the top nav bar) was added then also removed.
-- `SetFocus` walking the WebView2 child's parent chain — no visible effect.
+What still uses the foreground + real-keystroke path (works, window can be
+backgrounded): `toggle_fullscreen`, `toggle_pause` via `REAL_KEY_COMMANDS` in
+`server.py` (fullscreen needs a real gesture — `requestFullscreen()` threw
+`Permissions check failed` from the synthetic event).
 
-What still works and stayed in (`REAL_KEY_COMMANDS` in `server.py`):
-- `toggle_fullscreen`, `toggle_pause` inject a real `SendInput` keystroke after
-  foregrounding. Fullscreen confirmed working from the phone with the window
-  backgrounded (it previously threw `Permissions check failed` because
-  `requestFullscreen()` needs a gesture).
+If arbitrary-UI remote control is ever wanted back (Settings pages, addon
+prompts, modals — things Browse can't scrape), the only real fix is
+`ICoreWebView2Controller::MoveFocus` on window activate, which lives in
+`Zaarrg/stremio-community-v5`, not this repo.
 
-Options not yet tried, roughly in order of preference:
-- [ ] **Route `nav_dpad` through `SendInput` real arrow keys** (like fullscreen).
-      Real trusted arrows + whatever focus the foreground gives may be enough for
-      `navigation.js` to drive the grid. Cheapest next step; never actually tested.
-- [ ] **Synthesized click at a genuinely safe pixel.** Needs a point that
-      navigates nowhere on every route — the nav-bar gap idea was on the right
-      track but flaky; a webmod that reports the rect of a known-inert element
-      each state POST would be more reliable than a hard-coded pixel.
-- [ ] **Fix it in the C++ shell** via `ICoreWebView2Controller::MoveFocus` on
-      window activate. Correct fix, but lives in `Zaarrg/stremio-community-v5`,
-      not this repo.
-
-Diagnostic aid left in place: set `localStorage kai-remote-debug=true` in the
-Stremio DevTools console + reload → `remote-client.js` logs every
-pointer/click/focus event and per-command `hasFocus` / `userActivation` state.
+Diagnostic aid left in place: `localStorage kai-remote-debug=true` in the Stremio
+DevTools console + reload → `remote-client.js` logs pointer/click/focus events
+and per-command `hasFocus` / `userActivation`.
 
 ### 2. Orphaned command handlers — decide keep vs. delete
 
-The web app no longer sends these; handlers still exist in `WEBMOD_COMMANDS`
+The web app doesn't send these; handlers still exist in `WEBMOD_COMMANDS`
 (`server.py`) and `actuators.js`:
 - [ ] `toggle_subs_menu`, `toggle_audio_menu` — buttons were removed when the
       player panel moved to `set_sub_track` / `add_sub_delay` etc. Dead unless
       re-added.
+- [ ] `nav_home` — the Browse "Board" chip covers it (`nav_page` → `#/`). Small,
+      generic; keep or drop.
 - [ ] `open_detail`, `open_streams` — superseded by `open_details` / `open_item`.
       Arguably keep as a generic hash-nav API.
 - [ ] `nav_hash` — no caller; generic, low cost to keep.
@@ -175,8 +165,6 @@ The web app no longer sends these; handlers still exist in `WEBMOD_COMMANDS`
 - [ ] `actuators.js` `toggle_fullscreen` comment claims the control-bar button
       needs "no user gesture" — false (that's why fullscreen moved to
       `SendInput`). It's only the fallback path now; fix the comment.
-- [ ] `actuators.js` logs a hard-coded `"(v1.1.7)"` string — drifts from
-      `@version`.
 - [ ] `stremio-settings.ini` `[Window]` geometry is rewritten by the app on every
       close — decide whether to keep tracking it or gitignore.
 

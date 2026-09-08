@@ -65,40 +65,28 @@ inside that branch, first):
 ## 3. `WEBMOD_COMMANDS` - queued for the browser webmod
 
 Everything that needs the DOM / React app: route navigation (`nav_home`,
-`nav_page`, `nav_hash`, `nav_back`), D-pad focus movement (`nav_dpad`),
-`nav_ok`, opening details / streams, episode and season picking, catalog
-scraping triggers, `search`, `instant_resume`, `launch_stream`.
+`nav_page`, `nav_hash`, `nav_back`), opening details / streams, episode and
+season picking, catalog scraping triggers, `search`, `instant_resume`,
+`launch_stream`.
+
+These work by scraping the page and clicking real elements / changing
+`location.hash`, which do **not** need the WebView2 surface focused - unlike
+driving Stremio's on-screen focus ring, which is why the old D-pad
+(`nav_dpad` / `nav_ok`) was removed (see `CHECKLIST.md`).
 
 Flow:
 
 1. `_activate_window()` foregrounds the window (`SetForegroundWindow` + the
-   `AttachThreadInput` dance). Note: this does NOT give the Chromium child OS
-   focus or user activation - only a physical click on the window does that, so
-   D-pad grid navigation can still fail until the user clicks once. Attempts to
-   substitute a synthesized click (`SendInput` / `PostMessage`) did not hold up
-   in testing and were removed; the `REAL_KEY_COMMANDS` path is what actually
-   works for the gesture-gated shortcuts.
+   `AttachThreadInput` dance) - kept mainly for the `REAL_KEY_COMMANDS` path;
+   the DOM/hash work below doesn't strictly need it.
 2. `webq.push(cmd, args)` enqueues the command.
 3. `webmods/Remote/remote-client.js` is long-polling `GET /webmod/poll`
    (`webq.drain`, 25 s hold). It pulls the queue, and for each item calls
    `window.KaiRemote.Actuators[cmd](args)` (`actuators.js`).
-4. The actuator does its DOM work - dispatch a synthetic `KeyboardEvent`, a
-   real-ish `mousedown`/`mouseup`/`click` (`clickReal`), a `location.hash`
-   change, geometric focus movement (`moveFocus`), etc.
+4. The actuator does its DOM work - a `location.hash` change, or a physical-style
+   `mousedown`/`mouseup`/`click` (`clickReal`) on a scraped element.
 5. Results are POSTed back as `acks` on the next `POST /webmod/state`, alongside
    a fresh scrape of route + catalog + player UI state.
-
-`nav_dpad` is the notable one: on the player it dispatches the arrow key
-(seek / volume / popup nav); off the player it dispatches the arrow **and**, if
-navigation.js did not move focus, runs its own geometric nearest-focusable
-search.
-
-> **Known limitation.** Off the player, `nav_dpad` and other DOM commands often
-> don't take until the user physically clicks the Stremio window once per
-> session - foregrounding it doesn't focus the WebView2 surface or grant user
-> activation, and a synthesized click could not be made reliable. See
-> **Known issues & further work** in `CHECKLIST.md` for the options still open
-> (routing `nav_dpad` through real `SendInput` arrows is the untried next step).
 
 ## Adding a command
 

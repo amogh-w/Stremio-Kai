@@ -3,10 +3,15 @@
  * @description Synthetic keyboard/mouse actuation of the Stremio React UI, adapted
  *              from webmods/Utilities/navigation.js. Every "webmod command" that
  *              the phone can send is executed here.
- * @version 1.1.7
- * @changelog 1.1.7 - server foregrounds the Stremio window before commands, so
- *            nav_dpad is back to keys (navigation.js) with moveFocus as fallback;
- *            toggle_fullscreen prefers the control-bar button.
+ * @version 1.2.0
+ * @changelog 1.2.0 - removed nav_dpad / nav_ok and the geometric spatial-focus
+ *            engine (moveFocus / visibleFocusables / FOCUSABLE). The D-pad drove
+ *            Stremio's focus ring, which needs the WebView2 surface focused (the
+ *            unsolved "click the window once" bug) and duplicated Browse. `key()`
+ *            no longer forces window.isAppFocused (that was only for the D-pad).
+ *   1.1.7 - server foregrounds the Stremio window before commands, so nav_dpad
+ *           is back to keys (navigation.js) with moveFocus as fallback;
+ *           toggle_fullscreen prefers the control-bar button.
  *   1.1.6 - toggle_fullscreen: send the player's `f` key (the shell, not mpv,
  *           owns the window).
  *   1.1.5 - nav_dpad does its own geometric spatial focus off the player
@@ -32,12 +37,7 @@
   const onPlayer = () => window.location.hash.startsWith("#/player");
 
   function key(target, k, code, keyCode) {
-    // navigation.js owns arrow-key spatial nav and gates its keydown handler on
-    // `window.isAppFocused` / document.hasFocus(). A phone-driven event usually
-    // arrives while the PC window is unfocused, so force the flag true first
-    // (its own focus/blur listeners correct it again). `composed: true` matches
-    // navigation.js's own synthetic events.
-    try { window.isAppFocused = true; } catch (e) {}
+    // `composed: true` matches navigation.js's own synthetic events.
     (target || document).dispatchEvent(
       new KeyboardEvent("keydown", {
         key: k,
@@ -94,135 +94,7 @@
     return { ok: clickReal(el) };
   }
 
-  const DPAD = {
-    up: "ArrowUp",
-    down: "ArrowDown",
-    left: "ArrowLeft",
-    right: "ArrowRight",
-  };
-  const DPAD_CODE = { up: 38, down: 40, left: 37, right: 39 };
-
-  // --- geometric spatial focus navigation ---------------------------------
-  // Stremio Web has no native arrow-key grid navigation (navigation.js adds it,
-  // but gates on window focus so phone input is ignored). So off the player we
-  // move DOM focus ourselves: from the focused element, pick the nearest
-  // focusable in the requested direction.
-  const FOCUSABLE =
-    'a[href], button, [role="button"], [tabindex="0"], input, select, ' +
-    ".meta-item-container-Tj0Ib, [class*='meta-item-container-'], " +
-    ".video-container-ezBpK, [class*='video-container-'], " +
-    "[class*='stream-container-'], [class*='action-button-']";
-
-  function visibleFocusables() {
-    const vw = window.innerWidth, vh = window.innerHeight;
-    return Array.prototype.filter.call(
-      document.querySelectorAll(FOCUSABLE),
-      function (el) {
-        if (el.disabled || el.closest("[aria-hidden='true']")) return false;
-        const r = el.getBoundingClientRect();
-        if (r.width < 4 || r.height < 4) return false;
-        // on-screen or just past an edge
-        if (r.bottom < -40 || r.top > vh + 40 || r.right < -40 || r.left > vw + 40) return false;
-        const cs = window.getComputedStyle(el);
-        return cs.visibility !== "hidden" && cs.display !== "none" && cs.pointerEvents !== "none";
-      },
-    );
-  }
-
-  function moveFocus(dir) {
-    const items = visibleFocusables();
-    if (!items.length) return false;
-    const cur = document.activeElement;
-    const curItem = cur && items.indexOf(cur) !== -1 ? cur : null;
-
-    if (!curItem) {
-      // nothing focused yet — grab the item nearest the top-centre of the view
-      const cx = window.innerWidth / 2;
-      let best = items[0], bestD = Infinity;
-      items.forEach(function (el) {
-        const r = el.getBoundingClientRect();
-        const d = Math.max(0, r.top) + Math.abs((r.left + r.right) / 2 - cx) * 0.5;
-        if (d < bestD) { bestD = d; best = el; }
-      });
-      best.focus({ preventScroll: false });
-      best.scrollIntoView({ block: "nearest", inline: "nearest" });
-      return true;
-    }
-
-    const cr = curItem.getBoundingClientRect();
-    const ccx = (cr.left + cr.right) / 2, ccy = (cr.top + cr.bottom) / 2;
-    let best = null, bestScore = Infinity;
-    items.forEach(function (el) {
-      if (el === curItem) return;
-      const r = el.getBoundingClientRect();
-      const ex = (r.left + r.right) / 2, ey = (r.top + r.bottom) / 2;
-      const dx = ex - ccx, dy = ey - ccy;
-      let along, across;
-      if (dir === "left") { if (dx > -6) return; along = -dx; across = Math.abs(dy); }
-      else if (dir === "right") { if (dx < 6) return; along = dx; across = Math.abs(dy); }
-      else if (dir === "up") { if (dy > -6) return; along = -dy; across = Math.abs(dx); }
-      else { if (dy < 6) return; along = dy; across = Math.abs(dx); } // down
-      const score = along + across * 2;
-      if (score < bestScore) { bestScore = score; best = el; }
-    });
-    if (!best) return false;
-    best.focus({ preventScroll: false });
-    best.scrollIntoView({ block: "nearest", inline: "nearest" });
-    return true;
-  }
-
   const Actuators = {
-    // The server foregrounds the Stremio window before this runs, so
-    // navigation.js's focus-gated spatial nav works again - dispatch the arrow
-    // key and let it drive. Off the player, if navigation.js didn't move focus
-    // (older build / edge page), fall back to our own geometric move.
-    async nav_dpad(args) {
-      const dir = (args && args.dir) || "";
-      const k = DPAD[dir];
-      if (!k) return { ok: false, error: "bad dir" };
-      const code = "Arrow" + dir[0].toUpperCase() + dir.slice(1);
-      if (onPlayer()) {
-        key(document, k, code, DPAD_CODE[dir]);  // seek / volume / popup nav
-        return { ok: true, via: "key" };
-      }
-      const before = document.activeElement;
-      key(document, k, code, DPAD_CODE[dir]);
-      await new Promise(function (r) { setTimeout(r, 40); });
-      if (document.activeElement === before || document.activeElement === document.body) {
-        return { ok: moveFocus(dir), via: "focus" };
-      }
-      return { ok: true, via: "key" };
-    },
-
-    nav_ok() {
-      // Play/pause when on the player and not focused on a control.
-      const a = document.activeElement;
-      const isControl =
-        a &&
-        (a.tagName === "BUTTON" ||
-          a.tagName === "A" ||
-          parseInt(a.getAttribute("tabindex"), 10) >= 0);
-      if (onPlayer() && (!a || a === document.body || !isControl)) {
-        key(document, "MediaPlayPause", "MediaPlayPause", 179);
-        return { ok: true, did: "playpause" };
-      }
-      if (a && a !== document.body) {
-        const cw = a.closest(window.KaiRemote.SEL.continueWatchingRow);
-        if (cw) {
-          // literal selector - selectors.js no longer carries a playIconLayer key
-          const PLAY_ICON = "[class*='play-icon'], [class*='play-button']";
-          const icon =
-            a.querySelector(PLAY_ICON) ||
-            (a.closest(window.KaiRemote.SEL.metaItem) || document.body).querySelector(
-              PLAY_ICON,
-            );
-          if (icon) return { ok: clickReal(icon), did: "resume" };
-        }
-        return { ok: clickReal(a), did: "click" };
-      }
-      return { ok: false, error: "nothing focused" };
-    },
-
     // Play/pause. Sent to the Stremio web player (space), not the mpv pipe:
     // the web UI owns play/pause state and reverts an out-of-band unpause.
     toggle_pause() {
@@ -422,5 +294,5 @@
   };
 
   window.KaiRemote.Actuators = Actuators;
-  console.log("[Kai Remote] actuators loaded (v1.1.7)");
+  console.log("[Kai Remote] actuators loaded (v1.2.0)");
 })();

@@ -4,12 +4,16 @@ r"""
 Stremio Kai - Phone Remote server
 =================================
 
-@version 1.1.0
-@changelog 1.1.0 - gesture-gated player shortcuts (fullscreen, play/pause,
-           sub/audio menu) now inject a real keypress via SendInput into the
-           foregrounded window instead of the webmod's synthetic KeyboardEvent,
-           which has no user activation (fullscreen threw "Permissions check
-           failed"). See COMMANDS.md for the full command-routing map.
+@version 1.2.0
+@changelog 1.2.0 - dropped nav_dpad / nav_ok: the D-pad drove Stremio's on-screen
+           focus ring, which needs the WebView2 surface focused (the unsolved
+           "click the window once" bug) and duplicated what Browse already does
+           via real element clicks + hash nav. The webapp is Playing + Browse now.
+  1.1.0 - gesture-gated player shortcuts (fullscreen, play/pause, sub/audio menu)
+           now inject a real keypress via SendInput into the foregrounded window
+           instead of the webmod's synthetic KeyboardEvent, which has no user
+           activation (fullscreen threw "Permissions check failed"). See
+           COMMANDS.md for the full command-routing map.
 @author  allecsc / Stremio Kai
 @requires Python 3.8+ standard library only (ships as portable_config/../python.exe)
 
@@ -267,7 +271,7 @@ MPV_COMMANDS = {
 # the webmod knows how to actuate each one.
 WEBMOD_COMMANDS = {
     "toggle_pause", "toggle_fullscreen",
-    "nav_dpad", "nav_ok", "nav_back", "nav_home", "nav_page", "nav_hash",
+    "nav_back", "nav_home", "nav_page", "nav_hash",
     "player_next_video", "player_prev_video",
     "toggle_subs_menu", "toggle_audio_menu",
     "open_item", "open_details", "open_detail", "open_streams",
@@ -863,7 +867,7 @@ class Handler(BaseHTTPRequestHandler):
             "token_required": bool(self.cfg["token"]),
             "mpv_connected": self.store.pipe_connected(),
             "sse_clients": self.sse_count[0],
-            "version": "1.1.0",
+            "version": "1.2.0",
         })
 
     def _serve_static(self, rel):
