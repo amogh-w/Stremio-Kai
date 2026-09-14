@@ -1313,7 +1313,7 @@
       const link = document.createElement("link");
       link.id = "kai-settings-ui-css";
       link.rel = "stylesheet";
-      link.href = "webmods/Theme/settings-ui.css";
+      link.href = "webmods/Theme/Settings.css";
       document.head.appendChild(link);
     }
   }

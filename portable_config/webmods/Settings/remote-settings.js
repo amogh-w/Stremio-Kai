@@ -4,10 +4,15 @@
  *              kai-remote-* localStorage keys and dispatches `kai-settings-changed`
  *              so webmods/Remote/remote-client.js pushes the config down to
  *              scripts/remote-control/main.lua.
- * @version 1.0.0
+ * @version 1.1.0
  * @author allecsc / Stremio Kai
  *
  * @changelog
+ *   v1.1.0 - Fix: was blindly appended to the end of the whole settings page
+ *            (.settings-content-lLXmk), so it landed wherever that happened to
+ *            render and overlapped other sections. Now anchored right after the
+ *            Kai Shortcuts section by title text, same technique as
+ *            custom-shortcuts.js / mpv-settings.js.
  *   v1.0.0 - Initial: enable toggle, port, PIN, live URL readout.
  *            (QR code is a planned follow-up - needs a vendored generator.)
  */
@@ -23,7 +28,9 @@
     token: "kai-remote-token",
   };
   const DEFAULT_PORT = 5000;
-  const SETTINGS_CONTAINER = ".settings-content-lLXmk";
+  // custom-shortcuts.js renames "Player Shortcuts" -> "Kai Shortcuts" in place;
+  // match either so this works whether or not that webmod has run yet.
+  const ANCHOR_SECTION_LABELS = ["Kai Shortcuts", "Player Shortcuts"];
   const MARK = "kai-remote-setting";
 
   const get = (k, d) => {
@@ -40,7 +47,7 @@
     const link = document.createElement("link");
     link.id = "kai-settings-ui-css";
     link.rel = "stylesheet";
-    link.href = "webmods/Theme/settings-ui.css";
+    link.href = "webmods/Theme/Settings.css";
     document.head.appendChild(link);
   }
 
@@ -152,9 +159,11 @@
     const label = document.createElement("div");
     label.className = "label-FFamJ";
     label.textContent = "Address for your phone";
+    label.style.cssText = "color:rgba(255,255,255,.55)";
     box.appendChild(label);
 
     const value = document.createElement("div");
+    value.className = "kai-remote-address";
     value.style.cssText =
       "font-size:1.1rem;font-weight:600;color:#fff;user-select:all;word-break:break-all";
     value.textContent = "…";
@@ -190,6 +199,19 @@
     setTimeout(refresh, 1500);
     setTimeout(refresh, 4000);
     return box;
+  }
+
+  // --- locate the Kai Shortcuts section (title text match, like
+  // custom-shortcuts.js / mpv-settings.js do for their own sections) --------
+  function findAnchorSection() {
+    const titles = document.querySelectorAll(".section-title-Nt71Z");
+    for (const title of titles) {
+      const txt = title.textContent.trim();
+      if (ANCHOR_SECTION_LABELS.some((l) => txt.includes(l))) {
+        return title.closest(".section-container-twzKQ");
+      }
+    }
+    return null;
   }
 
   // --- build + inject ---------------------------------------------------
@@ -252,12 +274,11 @@
   }
 
   function inject() {
-    const container = document.querySelector(SETTINGS_CONTAINER);
-    if (!container) return false;
-    if (container.querySelector("." + MARK)) return true;
-    // Append after the last existing section so we don't fight mpv-settings.js.
-    container.appendChild(build());
-    console.log("[Kai Remote] settings section injected");
+    if (document.querySelector("." + MARK)) return true;
+    const anchor = findAnchorSection();
+    if (!anchor) return false; // Kai Shortcuts section not mounted (yet)
+    anchor.insertAdjacentElement("afterend", build());
+    console.log("[Kai Remote] settings section injected (below Kai Shortcuts)");
     return true;
   }
 
@@ -272,7 +293,7 @@
       if (t) return;
       t = setTimeout(() => {
         t = null;
-        if (document.querySelector(SETTINGS_CONTAINER)) inject();
+        inject();
       }, 60);
     });
     obs.observe(document.body, { childList: true, subtree: true });

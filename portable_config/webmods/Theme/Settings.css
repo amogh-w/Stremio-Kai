@@ -387,6 +387,11 @@ kbd, .keyboard-shortcut,
     overflow: visible !important;
 }
 
+/* Phone Remote: "Address for your phone" readout (remote-settings.js). */
+.kai-remote-address {
+    color: #fff !important;
+}
+
 /* Input Group */
 .kai-settings-input-wrapper {
     position: relative;
