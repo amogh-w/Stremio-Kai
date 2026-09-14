@@ -5,10 +5,12 @@
  *              Metadata/dom-processor.js / details-enhancer.js already rely on,
  *              with a [class^=] / [class*=] fallback so a hash change degrades
  *              instead of breaking.
- * @version 1.1.2
+ * @version 1.1.3
  * @author allecsc / Stremio Kai
  *
  * @changelog
+ *   1.1.3 - videoThumb: episode-still selector for the phone episode list
+ *           (broad [class*='thumbnail'] fallback - re-verify the exact hash).
  *   1.1.2 - fullscreenButton (control-bar) for the phone fullscreen toggle.
  *   1.1.1 - season bar selectors (prev / next / current-label) for the phone
  *           season stepper. Confirmed against a live series page.
@@ -49,6 +51,9 @@
     videosList: ".videos-list-nE0LJ, .videos-container-msX8s, [class^='videos-list-'], [class*='videos-container-']",
     videoRow: ".video-container-ezBpK, [class^='video-container-']",
     videoRowTitle: ".title-container-NcfV9, [class*='title-container-'], [class*='title-']",
+    // episode still: a bg-image div (or nested <img>) inside the video row
+    videoThumb:
+      ".thumbnail-container-tPQAd, [class*='thumbnail-container-'], [class*='thumbnail-'], [class*='thumbnail']",
     seasonsBar: ".seasons-bar-container-nOZjG, .seasons-bar-Ma8vp, [class*='seasons-bar']",
     seasonLabel: ".seasons-popup-label-container-fZcu4 .label-SoEGc, [class*='seasons-popup-label'] [class*='label-']",
     seasonPrev: ".prev-season-button-bs1GQ, [class*='prev-season']",

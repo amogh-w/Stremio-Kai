@@ -4,8 +4,11 @@ r"""
 Stremio Kai - Phone Remote server
 =================================
 
-@version 1.2.0
-@changelog 1.2.0 - dropped nav_dpad / nav_ok: the D-pad drove Stremio's on-screen
+@version 1.2.1
+@changelog 1.2.1 - ultrawide zoom is now a real `u` keypress (REAL_KEY_COMMANDS,
+           input.conf cycles panscan 0/0.5/1) like fullscreen's `f`; the
+           `set_panscan` pipe command is gone (webapp no longer sends it).
+  1.2.0 - dropped nav_dpad / nav_ok: the D-pad drove Stremio's on-screen
            focus ring, which needs the WebView2 surface focused (the unsolved
            "click the window once" bug) and duplicated what Browse already does
            via real element clicks + hash nav. The webapp is Playing + Browse now.
@@ -261,16 +264,14 @@ MPV_COMMANDS = {
     "chapter_prev":      lambda a: ["add", "chapter", -1],
     "stop_playback":     lambda a: ["stop"],
     "perform_skip":      lambda a: ["script-message-to", "notify_skip", "perform-skip"],
-    # ultrawide zoom: crop to fill (panscan 1.0) <-> fit (0.0). mpv owns this
-    # render property so the pipe is fine; fullscreen is a WEBMOD_COMMAND (the
-    # shell, not mpv, owns the window).
-    "set_panscan":       lambda a: ["set_property", "panscan", _clamp(a.get("value", 0), 0, 1)],
+    # ultrawide zoom is a REAL_KEY_COMMAND ('u' - input.conf cycles panscan
+    # 0/0.5/1); the `panscan` property is still observed for the button state.
 }
 
 # Commands forwarded to the webmod (things mpv IPC cannot do). Just a whitelist -
 # the webmod knows how to actuate each one.
 WEBMOD_COMMANDS = {
-    "toggle_pause", "toggle_fullscreen",
+    "toggle_pause", "toggle_fullscreen", "toggle_ultrawide",
     "nav_back", "nav_home", "nav_page", "nav_hash",
     "player_next_video", "player_prev_video",
     "toggle_subs_menu", "toggle_audio_menu",
@@ -288,6 +289,7 @@ WEBMOD_COMMANDS = {
 REAL_KEY_COMMANDS = {
     "toggle_fullscreen": 0x46,  # F
     "toggle_pause":      0x20,  # Space
+    "toggle_ultrawide":  0x55,  # U  (input.conf: cycle-values panscan 0 0.5 1.0)
 }
 
 
@@ -867,7 +869,7 @@ class Handler(BaseHTTPRequestHandler):
             "token_required": bool(self.cfg["token"]),
             "mpv_connected": self.store.pipe_connected(),
             "sse_clients": self.sse_count[0],
-            "version": "1.2.0",
+            "version": "1.2.1",
         })
 
     def _serve_static(self, rel):

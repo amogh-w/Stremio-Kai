@@ -3,10 +3,13 @@
  * @description Enumerate whatever page is currently open (board rows / library /
  *              search results / episode list / stream list) into plain objects the
  *              phone can render. Never navigates on its own.
- * @version 1.1.4
+ * @version 1.1.5
  * @author allecsc / Stremio Kai
  *
  * @changelog
+ *   1.1.5 - episodeRows() carries a landscape `thumb` (first <img> src, else a
+ *           background-image URL from SEL.videoThumb) so the phone episode list
+ *           shows Stremio's episode stills. Re-verify SEL.videoThumb on rebase.
  *   1.1.4 - Browse season stepper: seasonInfo() returns the "Season N" label
  *           (never the prev/next button text) + prev/next availability; episode
  *           number also parsed from the title. Other seasons sit behind a closed
@@ -54,6 +57,36 @@
       if (m && m[1] && !m[1].startsWith("data:")) return m[1];
     }
     return "";
+  }
+
+  const _urlOk = (s) => s && !s.startsWith("data:") && s !== "none";
+
+  // Landscape thumbnail for an episode row (Stremio pulls these from
+  // Cinemeta/TMDB; rows without one just fall back to the number badge).
+  // Prefer the thumbnail-classed element (its bg-image or a nested <img>),
+  // then fall back to any bg-image / <img> in the row.
+  function thumbFrom(row) {
+    const cands = [];
+    const box = row.querySelector(SEL().videoThumb);
+    if (box) cands.push(box);
+    cands.push(row.querySelector("[style*='background-image']"));
+    for (const el of cands) {
+      if (!el) continue;
+      const inner = el.tagName === "IMG" ? el : el.querySelector("img");
+      if (inner) {
+        const src = inner.currentSrc || inner.getAttribute("src") || inner.dataset.src || "";
+        if (_urlOk(src)) return src;
+      }
+      let bg = el.getAttribute("style") || "";
+      if (!/url\(/.test(bg)) {
+        try { bg = getComputedStyle(el).backgroundImage || ""; } catch (e) {}
+      }
+      const m = bg.match(/url\(["']?(.*?)["']?\)/);
+      if (m && _urlOk(m[1])) return m[1];
+    }
+    const img = row.querySelector("img");
+    const s = img && (img.currentSrc || img.getAttribute("src") || img.dataset.src || "");
+    return _urlOk(s) ? s : "";
   }
 
   // Pull {type,id} from a Stremio detail/player href.
@@ -211,6 +244,7 @@
           season: season,
           episode: episode,
           ordinal: i,
+          thumb: thumbFrom(row),
           watched: /watched|seen/i.test(row.className),
           el: row,
         });
@@ -262,6 +296,7 @@
           return {
             label: r.label, title: r.title, season: r.season,
             episode: r.episode, ordinal: r.ordinal, watched: r.watched,
+            thumb: r.thumb,
           };
         });
         out.streams = this.streamList();

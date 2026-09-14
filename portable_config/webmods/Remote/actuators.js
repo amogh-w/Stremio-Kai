@@ -3,8 +3,9 @@
  * @description Synthetic keyboard/mouse actuation of the Stremio React UI, adapted
  *              from webmods/Utilities/navigation.js. Every "webmod command" that
  *              the phone can send is executed here.
- * @version 1.2.0
- * @changelog 1.2.0 - removed nav_dpad / nav_ok and the geometric spatial-focus
+ * @version 1.2.1
+ * @changelog 1.2.1 - toggle_ultrawide fallback (real `u` sent by the server).
+ *   1.2.0 - removed nav_dpad / nav_ok and the geometric spatial-focus
  *            engine (moveFocus / visibleFocusables / FOCUSABLE). The D-pad drove
  *            Stremio's focus ring, which needs the WebView2 surface focused (the
  *            unsolved "click the window once" bug) and duplicated Browse. `key()`
@@ -172,6 +173,14 @@
       return { ok: true };
     },
 
+    // Ultrawide zoom - server sends a real `u` via SendInput; this is the
+    // non-Windows fallback (input.conf: cycle-values panscan 0 0.5 1.0).
+    toggle_ultrawide() {
+      if (!onPlayer()) return { ok: false, error: "not on player" };
+      key(document, "u", "KeyU", 85);
+      return { ok: true };
+    },
+
     open_detail(args) {
       const { type, id } = args || {};
       if (!type || !id) return { ok: false, error: "type+id required" };
@@ -294,5 +303,5 @@
   };
 
   window.KaiRemote.Actuators = Actuators;
-  console.log("[Kai Remote] actuators loaded (v1.2.0)");
+  console.log("[Kai Remote] actuators loaded (v1.2.1)");
 })();

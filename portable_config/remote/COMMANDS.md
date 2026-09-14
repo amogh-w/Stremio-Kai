@@ -20,9 +20,9 @@ phone  --POST /cmd-->  server.py _handle_cmd
 ## 1. `MPV_COMMANDS` - straight to mpv over the named pipe
 
 Transport / render state that mpv owns outright: seek, volume, speed, track
-selection, sub and audio delay, chapters, `panscan` (ultrawide zoom), `stop`,
-`perform_skip`. Each entry is `lambda args -> [mpv command array]`, sent over
-`\\.\pipe\kai-mpv` with `send_command(..., want_result=False)`.
+selection, sub and audio delay, chapters, `stop`, `perform_skip`. Each entry is
+`lambda args -> [mpv command array]`, sent over `\\.\pipe\kai-mpv` with
+`send_command(..., want_result=False)`.
 
 - No web UI involved, no focus needed, works whether or not the Stremio window
   is foreground.
@@ -34,17 +34,16 @@ selection, sub and audio delay, chapters, `panscan` (ultrawide zoom), `stop`,
 
 ## 2. `REAL_KEY_COMMANDS` - a real keypress via `SendInput`
 
-Player shortcuts that Stremio's **web UI** handles but only from a genuine user
-gesture. The synthetic `KeyboardEvent` the webmod dispatches is
-`isTrusted: false` and carries no [transient activation], so these silently
-failed from the phone - fullscreen threw `TypeError: Permissions check failed`
-(`document.*.requestFullscreen()`), and only worked for one press right after a
-physical click on the window.
+Player shortcuts that need a real key event, not the webmod's synthetic one:
+fullscreen goes through the web UI's `requestFullscreen()`, which throws
+`TypeError: Permissions check failed` without [transient activation]; ultrawide
+is an mpv `input.conf` binding that needs real keyboard input.
 
-| cmd | key | VK |
-|-----|-----|----|
-| `toggle_fullscreen` | `F` | `0x46` |
-| `toggle_pause` | `Space` | `0x20` |
+| cmd | key | VK | what it does |
+|-----|-----|----|----|
+| `toggle_fullscreen` | `F` | `0x46` | web UI fullscreen |
+| `toggle_pause` | `Space` | `0x20` | web player play/pause |
+| `toggle_ultrawide` | `U` | `0x55` | `input.conf` cycles `panscan` 0 / 0.5 / 1.0 |
 
 Flow in `_handle_cmd` (these names are also in `WEBMOD_COMMANDS`, so this runs
 inside that branch, first):
