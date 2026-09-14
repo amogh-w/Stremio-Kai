@@ -146,7 +146,12 @@ def _activate_window():
         if attached:
             u32.AttachThreadInput(fg_thread.value, cur_thread, True)
         try:
-            u32.ShowWindow(hwnd, 9)          # SW_RESTORE
+            # Only restore if actually minimized - SW_RESTORE (9) on an already
+            # maximized/normal window snaps it back to its last windowed rect,
+            # which looked like the window randomly resizing/moving on every
+            # phone command (play/pause, catalog taps, etc).
+            if u32.IsIconic(hwnd):
+                u32.ShowWindow(hwnd, 9)      # SW_RESTORE
             u32.BringWindowToTop(hwnd)
             u32.SetForegroundWindow(hwnd)
         finally:
