@@ -4,8 +4,14 @@ r"""
 Stremio Kai - Phone Remote server
 =================================
 
-@version 1.2.1
-@changelog 1.2.1 - ultrawide zoom is now a real `u` keypress (REAL_KEY_COMMANDS,
+@version 1.3.1
+@changelog 1.3.1 - sleep_timer_start now takes `seconds` instead of `minutes`
+           (clamped 1-36000) so the webapp's 10-second test preset works; the
+           webmod/Lua `mode` string is "countdown"/"episode" (was "minutes").
+  1.3.0 - sleep_timer_start/sleep_timer_cancel: pure script-message
+           commands (no web UI involved) driving the new scripts/sleep_timer.lua
+           - countdown or "after this episode", ends in a real OS suspend call.
+  1.2.1 - ultrawide zoom is now a real `u` keypress (REAL_KEY_COMMANDS,
            input.conf cycles panscan 0/0.5/1) like fullscreen's `f`; the
            `set_panscan` pipe command is gone (webapp no longer sends it).
   1.2.0 - dropped nav_dpad / nav_ok: the D-pad drove Stremio's on-screen
@@ -271,6 +277,14 @@ MPV_COMMANDS = {
     "perform_skip":      lambda a: ["script-message-to", "notify_skip", "perform-skip"],
     # ultrawide zoom is a REAL_KEY_COMMAND ('u' - input.conf cycles panscan
     # 0/0.5/1); the `panscan` property is still observed for the button state.
+    # Sleep timer: pure script-message, no web UI involved at all (same shape
+    # as perform_skip). scripts/sleep_timer.lua owns the actual countdown /
+    # eof watch / OS suspend call - this just forwards the phone's choice.
+    # Seconds, not minutes, so the webapp's "Test 10s" preset works - 1s-10h.
+    "sleep_timer_start": lambda a: ["script-message-to", "sleep_timer", "sleep-timer-start",
+                                     "episode" if a.get("mode") == "episode" else "countdown",
+                                     str(int(_clamp(a.get("seconds", 0), 1, 36000)))],
+    "sleep_timer_cancel": lambda a: ["script-message-to", "sleep_timer", "sleep-timer-cancel"],
 }
 
 # Commands forwarded to the webmod (things mpv IPC cannot do). Just a whitelist -
@@ -874,7 +888,7 @@ class Handler(BaseHTTPRequestHandler):
             "token_required": bool(self.cfg["token"]),
             "mpv_connected": self.store.pipe_connected(),
             "sse_clients": self.sse_count[0],
-            "version": "1.2.1",
+            "version": "1.3.1",
         })
 
     def _serve_static(self, rel):

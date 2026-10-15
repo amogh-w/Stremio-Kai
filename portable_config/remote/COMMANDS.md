@@ -24,6 +24,19 @@ selection, sub and audio delay, chapters, `stop`, `perform_skip`. Each entry is
 `lambda args -> [mpv command array]`, sent over `\\.\pipe\kai-mpv` with
 `send_command(..., want_result=False)`.
 
+`sleep_timer_start` / `sleep_timer_cancel` live here too, even though they
+don't touch playback state - they're a pure `script-message-to` with no web UI
+involvement at all (same shape as `perform_skip`), targeting
+`scripts/sleep_timer.lua`, which owns the actual countdown / end-of-episode
+watch / OS suspend call. `sleep_timer_start` takes `{mode: "countdown"|"episode",
+seconds}`; `seconds` is clamped to 1-36000 and ignored by the Lua side in
+`"episode"` mode. Seconds rather than minutes so the webapp's "Test 10s" preset
+(Playing tab -> More) can exercise the whole path - including the real OS
+suspend call - without waiting around. The webapp tracks and renders the
+countdown progress itself from the moment the button is tapped (there's no
+live round-trip of timer state from mpv), so reloading the phone page loses
+the on-screen countdown but not the actual timer running on the PC.
+
 - No web UI involved, no focus needed, works whether or not the Stremio window
   is foreground.
 - Guard: if the route view is known and is not `PLAYER` and the pipe is not

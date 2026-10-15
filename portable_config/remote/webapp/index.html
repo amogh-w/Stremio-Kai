@@ -318,8 +318,20 @@
     background: var(--panel-2); border-radius: 14px;
   }
   #speed-seg button.on,
+  #sleep-timer-seg button.on,
   #btn-uw.on,
   .stepper button.on { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
+
+  .sleep-progress-wrap { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .sleep-progress { height: 6px; border-radius: 999px; background: var(--panel-2); overflow: hidden; }
+  .sleep-progress-fill {
+    height: 100%; width: 0%; background: var(--accent);
+    transition: width 1s linear;
+  }
+  .sleep-progress-text {
+    font-size: 12px; color: var(--faint);
+    font-family: "IBM Plex Mono", monospace;
+  }
   .stepper {
     display: flex; align-items: center; gap: 10px;
     font-size: 11px; color: var(--faint);
@@ -676,6 +688,22 @@
         <button data-cmd="toggle_fullscreen">Fullscreen</button>
         <button id="btn-uw">Ultrawide zoom</button>
       </div>
+
+      <div class="rail-label">Sleep timer</div>
+      <div class="grid-keys" id="sleep-timer-seg">
+        <button data-cmd="sleep_timer_start" data-args='{"mode":"countdown","seconds":900}'>15 min</button>
+        <button data-cmd="sleep_timer_start" data-args='{"mode":"countdown","seconds":1800}'>30 min</button>
+        <button data-cmd="sleep_timer_start" data-args='{"mode":"countdown","seconds":2700}'>45 min</button>
+        <button data-cmd="sleep_timer_start" data-args='{"mode":"countdown","seconds":3600}'>60 min</button>
+        <button data-cmd="sleep_timer_start" data-args='{"mode":"episode"}'>After episode</button>
+        <button data-cmd="sleep_timer_start" data-args='{"mode":"countdown","seconds":10}'>Test 10s</button>
+      </div>
+      <div class="sleep-progress-wrap" id="sleep-progress-wrap" hidden>
+        <div class="sleep-progress"><div class="sleep-progress-fill" id="sleep-progress-fill"></div></div>
+        <div class="sleep-progress-text" id="sleep-progress-text"></div>
+      </div>
+      <button class="wide-key" id="btn-sleep-off" data-cmd="sleep_timer_cancel">Turn off sleep timer</button>
+
       <button class="wide-key" data-cmd="stop_playback">Stop</button>
     </div>
   </section>
@@ -787,8 +815,53 @@
     send(b.dataset.cmd, args);
     if (BROWSE_MUTATING[b.dataset.cmd] && b.closest("#screen-browse")) setBrowseBusy(true);
     if (b.dataset.cmd === "season_step" && b.closest("#screen-browse")) seasonLoading();
+    if (b.dataset.cmd === "sleep_timer_start") {
+      document.querySelectorAll("#sleep-timer-seg button").forEach(function (x) {
+        x.classList.toggle("on", x === b);
+      });
+      sleepTimer =
+        args.mode === "episode"
+          ? { mode: "episode" }
+          : { mode: "countdown", endsAt: Date.now() + (args.seconds || 0) * 1000, totalMs: (args.seconds || 0) * 1000 };
+      if (!sleepTimerTick) sleepTimerTick = setInterval(renderSleepTimer, 1000);
+      renderSleepTimer();
+    } else if (b.dataset.cmd === "sleep_timer_cancel") {
+      document.querySelectorAll("#sleep-timer-seg button").forEach(function (x) { x.classList.remove("on"); });
+      sleepTimer = null;
+      if (sleepTimerTick) { clearInterval(sleepTimerTick); sleepTimerTick = null; }
+      renderSleepTimer();
+    }
     if (b.animate) b.animate([{ opacity: .55 }, { opacity: 1 }], 160);
   });
+
+  // ── sleep timer progress (client-side only - mpv doesn't expose this
+  // state to observe, so it's a countdown from the moment the button was
+  // tapped here, not a live round-trip. The actual timer in sleep_timer.lua
+  // runs independently on the PC regardless of what this page shows -
+  // reloading the phone page loses the display, not the real timer.) ──────
+  var sleepTimer = null, sleepTimerTick = null;
+  function renderSleepTimer() {
+    var wrap = q("#sleep-progress-wrap"), fill = q("#sleep-progress-fill"), text = q("#sleep-progress-text");
+    if (!sleepTimer) { wrap.hidden = true; return; }
+    wrap.hidden = false;
+    if (sleepTimer.mode === "episode") {
+      fill.style.width = "100%";
+      text.textContent = "Will sleep after this episode";
+      return;
+    }
+    var remaining = sleepTimer.endsAt - Date.now();
+    if (remaining <= 0) {
+      fill.style.width = "100%";
+      text.textContent = "Sleeping…";
+      if (sleepTimerTick) { clearInterval(sleepTimerTick); sleepTimerTick = null; }
+      return;
+    }
+    var pct = 100 - (remaining / sleepTimer.totalMs) * 100;
+    fill.style.width = Math.max(0, Math.min(100, pct)) + "%";
+    var s = Math.ceil(remaining / 1000);
+    var m = Math.floor(s / 60), ss = String(s % 60).padStart(2, "0");
+    text.textContent = "Sleeping in " + m + ":" + ss;
+  }
 
   // ── tabs ───────────────────────────────────────────────────────
   function showTab(panel) {
