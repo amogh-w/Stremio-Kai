@@ -21,12 +21,13 @@ const names = readFileSync(list, "utf8")
   .map((l) => l.replace(/#.*/, "").trim())
   .filter(Boolean);
 
-// Stroke width is NOT set here: it inherits from the outer <svg> (see --icon-sw in kit.css),
-// because a presentation attribute inside the sprite cannot be overridden from outside.
+// Stroke width and fill are NOT set here: they inherit from the outer <svg> (see --icon-sw and the base
+// "fill: none" rule in kit.css), because a presentation attribute inside the sprite cannot be overridden
+// from outside. That is what lets a utility like `fill-current` turn an outline icon into a solid one.
 const symbols = names.map((name) => {
   const svg = readFileSync(join(iconsDir, `${name}.svg`), "utf8");
   const inner = svg.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "").trim();
-  return `<symbol id="${name}" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">${inner}</g></symbol>`;
+  return `<symbol id="${name}" viewBox="0 0 24 24"><g stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">${inner}</g></symbol>`;
 });
 writeFileSync(out, `<svg xmlns="http://www.w3.org/2000/svg">\n${symbols.join("\n")}\n</svg>\n`);
 console.log(`${out}: ${names.length} icons`);

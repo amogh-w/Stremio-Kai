@@ -66,46 +66,74 @@
 <section id="tab-play" hidden>
   <div id="off" hidden class="card my-3 px-2 py-7 text-center text-subtext0">Stremio is not connected, or nothing is playing.<br>Use the Navigate tab to open something.</div>
   <div id="player" hidden>
-    <div class="card my-3">
-      <div class="flex items-center gap-3">
-        <img id="poster" alt="" hidden class="h-[84px] rounded-lg bg-surface0">
-        <div>
-          <img id="logo" alt="" hidden class="mb-1.5 max-h-12 max-w-[70%]">
-          <h1 id="title" class="t-title3"></h1>
-          <div id="ep" class="t-sub text-subtext0"></div>
-        </div>
+
+    <!-- Now playing: art header -->
+    <div class="relative my-3 aspect-[16/10] overflow-hidden rounded-card bg-base">
+      <div id="npBg" class="absolute inset-0 bg-cover bg-center"></div>
+      <div class="absolute inset-0 bg-linear-to-t from-base/95 via-base/30 to-transparent"></div>
+      <div class="absolute inset-x-3.5 bottom-3">
+        <img id="logo" alt="" hidden class="mb-1.5 block max-h-14 max-w-[65%]">
+        <h1 id="title" class="t-title2"></h1>
+        <div id="ep" class="t-sub text-subtext1"></div>
       </div>
     </div>
+
+    <!-- Transport: seek bar, skip, play, secondary actions -->
     <div class="card my-3">
-      <input type="range" id="seek" min="0" max="1" step="1" value="0" class="range">
-      <div class="t-foot flex justify-between tabular-nums text-subtext0"><span id="cur">0:00</span><span id="dur">0:00</span></div>
-      <div class="my-2 flex gap-2">
-        <button class="btn btn-gray flex-1" data-seek="-30"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-ccw"/></svg>30</button>
-        <button class="btn btn-gray flex-1" data-seek="-10"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-ccw"/></svg>10</button>
-        <button class="btn btn-gray flex-1" data-seek="10"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-cw"/></svg>10</button>
-        <button class="btn btn-gray flex-1" data-seek="30"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-cw"/></svg>30</button>
+      <input type="range" id="seek" min="0" max="1" step="1" value="0" class="range" aria-label="Seek">
+      <div class="t-foot mt-1 flex justify-between tabular-nums text-subtext0"><span id="cur">0:00</span><span id="dur">0:00</span></div>
+      <div class="mt-3 flex items-center justify-between">
+        <button class="btn btn-gray size-14 flex-col !gap-0.5 !px-0 text-xs" data-seek="-30" aria-label="Back 30 seconds"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-ccw"/></svg>30</button>
+        <button class="btn btn-gray size-14 flex-col !gap-0.5 !px-0 text-xs" data-seek="-10" aria-label="Back 10 seconds"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-ccw"/></svg>10</button>
+        <button id="pp" class="btn btn-filled size-[76px] !rounded-full !px-0" aria-label="Play or pause"><svg class="size-9 fill-current shrink-0" aria-hidden="true"><use href="/icons.svg#play"/></svg></button>
+        <button class="btn btn-gray size-14 flex-col !gap-0.5 !px-0 text-xs" data-seek="10" aria-label="Forward 10 seconds"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-cw"/></svg>10</button>
+        <button class="btn btn-gray size-14 flex-col !gap-0.5 !px-0 text-xs" data-seek="30" aria-label="Forward 30 seconds"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-cw"/></svg>30</button>
       </div>
-      <div class="my-2 flex gap-2"><button id="pp" class="btn btn-filled btn-lg flex-1" aria-label="Play or pause"><svg class="size-8 shrink-0" aria-hidden="true"><use href="/icons.svg#play"/></svg></button></div>
-      <div class="my-2 flex gap-2">
-        <button id="skip" class="btn btn-tinted flex-1"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#fast-forward"/></svg>Skip intro</button>
-        <button id="next" class="btn btn-gray flex-1"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#skip-forward"/></svg>Next episode</button>
+      <div class="mt-4 flex gap-2">
+        <button id="skip" class="btn btn-tinted btn-capsule flex-1"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#fast-forward"/></svg>Skip intro</button>
+        <button id="next" class="btn btn-gray btn-capsule flex-1"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#skip-forward"/></svg>Next episode</button>
       </div>
     </div>
-    <div class="card my-3">
-      <div class="my-2 flex items-center gap-2"><button id="mute" class="btn btn-gray w-16 shrink-0" aria-label="Mute"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#volume-2"/></svg></button><input type="range" id="vol" min="0" max="100" step="1" class="range"></div>
-      <label class="t-foot mt-2.5 mb-1 block text-subtext0">Speed</label>
-      <div class="relative"><select id="speed" class="field"></select><svg class="pointer-events-none absolute top-3 right-3 size-5 text-overlay1" aria-hidden="true"><use href="/icons.svg#chevron-down"/></svg></div>
-      <label class="t-foot mt-2.5 mb-1 block text-subtext0">Audio</label>
-      <div class="relative"><select id="aid" class="field"></select><svg class="pointer-events-none absolute top-3 right-3 size-5 text-overlay1" aria-hidden="true"><use href="/icons.svg#chevron-down"/></svg></div>
-      <label class="t-foot mt-2.5 mb-1 block text-subtext0">Subtitles</label>
-      <div class="relative"><select id="sid" class="field"></select><svg class="pointer-events-none absolute top-3 right-3 size-5 text-overlay1" aria-hidden="true"><use href="/icons.svg#chevron-down"/></svg></div>
-      <div class="mt-3 flex items-center gap-2">
-        <button class="btn btn-gray flex-1" data-delay="-0.1"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#minus"/></svg>0.1s</button>
-        <div id="delay" class="t-sub flex-1 text-center text-subtext0">delay 0.0s</div>
-        <button class="btn btn-gray flex-1" data-delay="0.1"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#plus"/></svg>0.1s</button>
+
+    <!-- Sound, speed, audio, subtitles: a Settings-style list; each row opens the phone's native picker -->
+    <div class="group-list my-3">
+      <div class="row">
+        <button id="mute" class="btn btn-gray btn-icon shrink-0" aria-label="Mute"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#volume-2"/></svg></button>
+        <input type="range" id="vol" min="0" max="100" step="1" class="range" aria-label="Volume">
+        <span id="volVal" class="t-sub w-11 shrink-0 text-right tabular-nums text-subtext0">50%</span>
+      </div>
+      <label class="row relative cursor-pointer">
+        <div class="row-tile bg-sky"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#gauge"/></svg></div><span class="flex-1">Speed</span>
+        <span id="speedVal" class="max-w-[45%] truncate text-subtext0">1x</span><svg class="size-4 text-overlay1 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-right"/></svg>
+        <select id="speed" class="absolute inset-0 size-full cursor-pointer opacity-0" aria-label="Playback speed"></select>
+      </label>
+      <label class="row relative cursor-pointer">
+        <div class="row-tile bg-peach"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#audio-lines"/></svg></div><span class="flex-1">Audio</span>
+        <span id="aidVal" class="max-w-[45%] truncate text-subtext0"></span><svg class="size-4 text-overlay1 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-right"/></svg>
+        <select id="aid" class="absolute inset-0 size-full cursor-pointer opacity-0" aria-label="Audio track"></select>
+      </label>
+      <label class="row relative cursor-pointer">
+        <div class="row-tile bg-blue"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#captions"/></svg></div><span class="flex-1">Subtitles</span>
+        <span id="sidVal" class="max-w-[45%] truncate text-subtext0"></span><svg class="size-4 text-overlay1 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-right"/></svg>
+        <select id="sid" class="absolute inset-0 size-full cursor-pointer opacity-0" aria-label="Subtitles"></select>
+      </label>
+      <div class="row">
+        <div class="row-tile bg-mauve"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#timer"/></svg></div><span class="flex-1">Subtitle delay</span>
+        <button class="btn btn-gray btn-icon" data-delay="-0.1" aria-label="Earlier"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#minus"/></svg></button>
+        <span id="delay" class="t-sub w-12 text-center tabular-nums text-subtext1">0.0s</span>
+        <button class="btn btn-gray btn-icon" data-delay="0.1" aria-label="Later"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#plus"/></svg></button>
       </div>
     </div>
   </div>
+</section>
+
+<section id="tab-fx" hidden>
+  <div id="fxNote" hidden class="t-sub my-3 rounded-card bg-yellow/15 p-3.5 text-text">Start playing something first. These controls change the live player, so they only take effect during playback.</div>
+  <div class="t-foot mt-3 mb-1.5 px-1 text-subtext0 uppercase tracking-wide">Quick presets</div>
+  <div id="fxPresets" class="grid grid-cols-2 gap-2.5"></div>
+  <div id="fxPresetNote" hidden class="t-cap mt-1.5 px-1 text-subtext0">Waiting for the player's filter state. Start something playing and the presets unlock.</div>
+  <div class="card my-3"><div class="t-foot flex items-center justify-between text-subtext0"><span>Active now</span><span id="fxCustom" hidden class="badge badge-outline">Custom</span></div><div id="fxActive" class="mt-2 flex flex-wrap gap-2"></div></div>
+  <div id="fxList"></div>
 </section>
 
 <section id="tab-nav" hidden>
@@ -122,6 +150,7 @@
 <nav class="tabbar fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[480px] pb-[calc(12px+env(safe-area-inset-bottom))]">
   <button id="n-home" class="tab" aria-selected="true"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#house"/></svg>Home</button>
   <button id="n-play" class="tab" aria-selected="false"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#circle-play"/></svg>Playing</button>
+  <button id="n-fx" class="tab" aria-selected="false"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#wand-sparkles"/></svg>Enhance</button>
   <button id="n-nav" class="tab" aria-selected="false"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#gamepad-2"/></svg>Navigate</button>
 </nav>
 
@@ -201,6 +230,7 @@ const ico=(n,cls)=>`<svg class="${cls||"size-5"} shrink-0" aria-hidden="true"><u
 /* render() runs on every live update (about once a second). Re-creating an icon each time makes it flicker,
    so only touch the DOM when the icon name actually changes. */
 const setIcon=(btn,name,cls)=>{ if(btn.dataset.icon===name) return; btn.dataset.icon=name; btn.innerHTML=ico(name,cls); };
+const optText=(sel)=>sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:"";
 const el=(tag,cls,text)=>{ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; };
 const HINT="t-sub px-2 py-4 text-center text-subtext0";
 const paint=(r)=>r.style.setProperty("--p",((r.value-r.min)/(r.max-r.min||1))*100+"%");
@@ -224,21 +254,25 @@ function render(){
   $("title").textContent=n?(n.name||n.title||""):"";
   $("ep").textContent=n&&n.season!=null?`S${n.season} E${n.episode}${n.title&&n.title!==n.name?" - "+n.title.replace(/^.* - /,""):""}`:"";
   const setImg=(e,src)=>{ if(src){ if(e.src!==src) e.src=src; e.hidden=false; } else e.hidden=true; };
-  setImg($("poster"),n&&img(n.poster,240)); setImg($("logo"),n&&img(n.logo,400));
+  setImg($("logo"),n&&img(n.logo,400)); $("title").hidden=!!(n&&n.logo); const nb=n&&n.background; $("npBg").style.backgroundImage=nb?`url("${img(nb,900)}")`:"";
   const bg=$("backdrop"); const b=n&&n.background; bg.style.backgroundImage=b?`url("${img(b,900)}")`:""; bg.style.opacity=(b&&cfg.backdrop)?0.3:0;
+  if(S.tab==="fx") renderFx();
   if(!playing) return;
   const dur=p.duration||0;
   if(!S.dragging){ $("seek").max=Math.max(1,Math.floor(dur)); $("seek").value=Math.floor(p["time-pos"]||0); paint($("seek")); $("cur").textContent=fmt(p["time-pos"]); }
   $("dur").textContent=fmt(dur);
-  setIcon($("pp"),p.pause?"play":"pause","size-8");
-  setIcon($("mute"),p.mute===true||p.mute==="yes"?"volume-x":"volume-2","size-6");
+  setIcon($("pp"),p.pause?"play":"pause","size-9 fill-current");
+  setIcon($("mute"),p.mute===true||p.mute==="yes"?"volume-x":"volume-2","size-5");
   if(document.activeElement!==$("vol")){ $("vol").value=p.volume??100; paint($("vol")); }
+  $("volVal").textContent=Math.round(p.volume??100)+"%";
   fillSelect($("speed"),[0.5,0.75,1,1.25,1.5,1.75,2].map(v=>[v,v+"x"]),String(p.speed??1));
   const tr=Array.isArray(p["track-list"])?p["track-list"]:[];
   fillSelect($("aid"),tr.filter(t=>t.type==="audio").map(t=>[String(t.id),label(t)]),String(p.aid));
   fillSelect($("sid"),[["no","Off"],...tr.filter(t=>t.type==="sub").map(t=>[String(t.id),label(t)])],off(p.sid)?"no":String(p.sid));
-  $("delay").textContent="delay "+(p["sub-delay"]||0).toFixed(1)+"s";
+  $("speedVal").textContent=optText($("speed")); $("aidVal").textContent=optText($("aid")); $("sidVal").textContent=optText($("sid"));
+  $("delay").textContent=(p["sub-delay"]||0).toFixed(1)+"s";
   $("next").hidden=!(n&&n.next);
+  if(S.tab==="fx") renderFx();
 }
 
 function tile(it,opts){
@@ -362,12 +396,12 @@ $("mute").onclick=()=>send({cmd:"mute",v:!(S.props.mute===true||S.props.mute==="
 $("skip").onclick=()=>send({cmd:"skip"}); $("next").onclick=()=>send({cmd:"next"});
 $("seek").addEventListener("input",()=>{ S.dragging=true; $("cur").textContent=fmt($("seek").value); });
 $("seek").addEventListener("change",()=>{ S.dragging=false; send({cmd:"seek",s:Number($("seek").value)}); });
-$("vol").addEventListener("input",()=>send({cmd:"volume",v:Number($("vol").value)}));
+$("vol").addEventListener("input",()=>{ send({cmd:"volume",v:Number($("vol").value)}); $("volVal").textContent=$("vol").value+"%"; });
 $("speed").onchange=()=>send({cmd:"speed",v:Number($("speed").value)});
 $("aid").onchange=()=>send({cmd:"aid",id:$("aid").value});
 $("sid").onchange=()=>send({cmd:"sid",id:$("sid").value});
-function tab(t){ S.tab=t; renderDetail(); for(const x of ["home","play","nav"]){ $("tab-"+x).hidden=t!==x; $("n-"+x).setAttribute("aria-selected",t===x); } }
-$("n-home").onclick=()=>{ if(S.tab==="home"&&onDetailRoute()) send({cmd:"hash",h:"#/"}); tab("home"); }; $("n-play").onclick=()=>tab("play"); $("n-nav").onclick=()=>tab("nav");
+function tab(t){ S.tab=t; renderDetail(); if(t==="fx") renderFx(); for(const x of ["home","play","fx","nav"]){ $("tab-"+x).hidden=t!==x; $("n-"+x).setAttribute("aria-selected",t===x); } }
+$("n-home").onclick=()=>{ if(S.tab==="home"&&onDetailRoute()) send({cmd:"hash",h:"#/"}); tab("home"); }; $("n-play").onclick=()=>tab("play"); $("n-fx").onclick=()=>tab("fx"); $("n-nav").onclick=()=>tab("nav");
 function opened(ref){ send({cmd:"open",ref}); UI.toast("Opening on the TV...","info"); }
 $("dBack").onclick=()=>send({cmd:"back"});
 $("dDesc").onclick=()=>$("dDesc").classList.toggle("is-on");
@@ -392,7 +426,7 @@ $("hero").addEventListener("touchend",(e)=>{ const dx=e.changedTouches[0].client
 /* ---- settings sheet ---- */
 function applySkip(){
   const vals=[-cfg.skipLong,-cfg.skipShort,cfg.skipShort,cfg.skipLong];
-  document.querySelectorAll("[data-seek]").forEach((b,i)=>{ b.dataset.seek=vals[i]; b.lastChild.textContent=Math.abs(vals[i]); });
+  document.querySelectorAll("[data-seek]").forEach((b,i)=>{ b.dataset.seek=vals[i]; b.lastChild.textContent=Math.abs(vals[i]); b.setAttribute("aria-label",(vals[i]<0?"Back ":"Forward ")+Math.abs(vals[i])+" seconds"); });
 }
 function syncSettings(){
   document.querySelectorAll("[data-cfg]").forEach((i)=>{ i.checked=!!cfg[i.dataset.cfg]; });
@@ -414,6 +448,202 @@ $("cfgReset").onclick=()=>{
   ["kai-settings","ui-flavor","ui-accent","ui-radius"].forEach((k)=>{ try{ localStorage.removeItem(k); }catch(e){} });
   location.reload();
 };
+
+
+/* ---- Enhance tab: every hotkey from input.conf, with live on/off state ---- */
+const A4=(l)=>l.map((n)=>n[0]==="!"?n.slice(1):"Anime4K_"+n);
+const DS=["AutoDownscalePre_x2","AutoDownscalePre_x4"];
+const PRESETS=[
+  {id:"f1",key:"F1",title:"Optimized+",sub:"Fast, lower-end GPUs",set:A4(["!denoise1","Clamp_Highlights","Restore_CNN_M","Upscale_CNN_x2_M",...DS,"Upscale_Denoise_CNN_x2_M","Thin_Fast"])},
+  {id:"f2",key:"F2",title:"Eye Candy (Fast)",sub:"Sharp lines, soft look",set:A4(["!denoise1","Clamp_Highlights","Restore_CNN_M","Upscale_CNN_x2_M","Restore_CNN_S",...DS,"Upscale_CNN_x2_S","Thin_Fast","Thin_HQ","Thin_VeryFast"])},
+  {id:"f3",key:"F3",title:"Eye Candy (HQ)",sub:"Best quality, heavy",set:A4(["!nlmeans","Clamp_Highlights","Restore_CNN_VL","Upscale_CNN_x2_VL","Restore_CNN_M",...DS,"Upscale_CNN_x2_M","Thin_Fast","Thin_HQ","Thin_VeryFast"])},
+  {id:"sf1",key:"Shift+F1",title:"Mode A+A (HQ)",sub:"Restore, then upscale",set:A4(["Clamp_Highlights","Restore_CNN_VL","Upscale_CNN_x2_VL","Restore_CNN_M",...DS,"Upscale_CNN_x2_M"])},
+  {id:"cf1",key:"Ctrl+F1",title:"Mode A+A (Fast)",sub:"Restore, then upscale",set:A4(["Clamp_Highlights","Restore_CNN_M","Upscale_CNN_x2_M","Restore_CNN_S",...DS,"Upscale_CNN_x2_S"])},
+  {id:"sf2",key:"Shift+F2",title:"Mode B+B (HQ)",sub:"Softer restore",set:A4(["Clamp_Highlights","Restore_CNN_Soft_VL","Upscale_CNN_x2_VL",...DS,"Restore_CNN_Soft_M","Upscale_CNN_x2_M"])},
+  {id:"cf2",key:"Ctrl+F2",title:"Mode B+B (Fast)",sub:"Softer restore",set:A4(["Clamp_Highlights","Restore_CNN_Soft_M","Upscale_CNN_x2_M",...DS,"Restore_CNN_Soft_S","Upscale_CNN_x2_S"])},
+  {id:"sf3",key:"Shift+F3",title:"Mode C+A (HQ)",sub:"Upscale with denoise",set:A4(["Clamp_Highlights","Upscale_Denoise_CNN_x2_VL",...DS,"Restore_CNN_M","Upscale_CNN_x2_M"])},
+  {id:"cf3",key:"Ctrl+F3",title:"Mode C+A (Fast)",sub:"Upscale with denoise",set:A4(["Clamp_Highlights","Upscale_Denoise_CNN_x2_M",...DS,"Restore_CNN_S","Upscale_CNN_x2_S"])},
+];
+const T=(id,key,title,sub,icon,tile)=>({id,key,title,sub,icon,tile,type:"toggle"});
+const FX=[
+  {sec:"Upscaling (Anime4K)",note:"Pick one preset. The check shows which one is running.",rows:[
+    ...PRESETS.map((p)=>({id:p.id,key:p.key,title:p.title,sub:p.sub,icon:"sparkles",tile:"bg-mauve",type:"preset"})),
+    {id:"a4off",key:"F4",title:"Anime4K off",sub:"Remove the upscaling shaders",icon:"x",tile:"bg-surface2",type:"action"},
+    {id:"alloff",key:"Ctrl+F4",title:"All filters off",sub:"Clear every shader",icon:"x",tile:"bg-red",type:"action"}]},
+  {sec:"Thin lines",rows:[
+    T("thinvf","Ctrl+1","Thin lines, very fast","","pen-line","bg-teal"),T("thinf","Ctrl+2","Thin lines, fast","","pen-line","bg-teal"),
+    T("thinhq","Ctrl+3","Thin lines, HQ","","pen-line","bg-teal"),T("thinaio","Ctrl+4","Thin lines, all in one","HQ + fast + very fast","pen-line","bg-teal")]},
+  {sec:"Denoise",rows:[
+    T("hq_l","F9","Denoise filter, low","hqdn3d","waves","bg-sky"),T("hq_m","Shift+F9","Denoise filter, medium","hqdn3d","waves","bg-sky"),T("hq_h","Ctrl+F9","Denoise filter, high","hqdn3d","waves","bg-sky"),
+    T("dn_l","F10","Denoise shader, low","","waves","bg-blue"),T("dn_n","Shift+F10","Denoise shader, normal","nlmeans","waves","bg-blue"),T("dn_h","Ctrl+F10","Denoise shader, high","","waves","bg-blue")]},
+  {sec:"Sharpen",rows:[
+    T("sharp","F11","Adaptive sharpen","","focus","bg-peach"),T("sharpdn","Ctrl+F11","Sharpen and denoise","","focus","bg-peach")]},
+  {sec:"Cleanup",rows:[
+    T("deband","F6","Deband","mpv built-in","blend","bg-yellow"),T("hdeband","Ctrl+F6","Deband shader","","blend","bg-yellow"),
+    T("deint","F7","Deinterlace","mpv built-in","film","bg-flamingo"),T("bwdif","Ctrl+F7","Deinterlace (bwdif)","","film","bg-flamingo")]},
+  {sec:"Motion smoothing (SVP)",rows:[
+    T("svp","F12","SVP frame interpolation","Smoother motion","zap","bg-green"),T("bwsvp","Ctrl+F12","Deinterlace + SVP","bwdif first, then SVP","zap","bg-green")]},
+  {sec:"View and status",rows:[
+    {id:"ultra",key:"u",title:"Ultrawide zoom",sub:"Cycles off, 50%, full",icon:"maximize",tile:"bg-pink",type:"value"},
+    {id:"stats",key:"t",title:"Stats overlay",sub:"Show or hide",icon:"activity",tile:"bg-lavender",type:"action"},
+    {id:"stats2",key:"T",title:"Stats, next page",sub:"Cycle stats pages",icon:"activity",tile:"bg-lavender",type:"action"}]},
+  {sec:"Profiles and audio",rows:[
+    {id:"vprof",key:"F8",title:"Cycle visual profile",sub:"Anime, HDR and more",icon:"sliders-horizontal",tile:"bg-mauve",type:"action"},
+    T("icc","Ctrl+F8","ICC color profile","Auto, on or off","palette","bg-rosewater"),
+    {id:"aprof",key:"`",title:"Cycle audio preset",sub:"Reference, Night, Voice",icon:"audio-lines",tile:"bg-peach",type:"action"}]},
+  {sec:"Player",rows:[
+    {id:"quit",key:"q",title:"Quit the player",sub:"Closes Stremio on the PC",icon:"power",tile:"bg-red",type:"quit"}]},
+];
+const fxRows={};
+function buildFx(){
+  const root=$("fxList");
+  FX.forEach((g)=>{
+    const h=el("div","t-foot mt-5 mb-1.5 px-1 text-subtext0 uppercase tracking-wide",g.sec); root.appendChild(h);
+    if(g.note) root.appendChild(el("div","t-cap -mt-1 mb-1.5 px-1 text-subtext0",g.note));
+    const list=el("div","group-list");
+    g.rows.forEach((r)=>{
+      const b=el("button","row w-full text-left"); b.dataset.hk=r.key; b.dataset.fx=r.id; b.dataset.type=r.type;
+      const trail=r.type==="toggle"?`<span class="switch switch-accent pointer-events-none" aria-hidden="true"><input type="checkbox" tabindex="-1"></span>`
+        :r.type==="preset"?`<span data-chk class="invisible text-accent">${ico("check","size-5")}</span>`
+        :r.type==="value"?`<span data-val class="t-sub text-subtext0"></span>`
+        :ico("chevron-right","size-4 text-overlay1");
+      b.innerHTML=`<div class="row-tile ${r.tile}">${ico(r.icon,"size-4")}</div><div class="min-w-0 flex-1"><div class="t-sub" data-t>${r.title}</div><div class="t-cap text-subtext0" data-s>${r.sub?r.sub+" &middot; ":""}<span class="kbd">${r.key}</span></div></div>${trail}`;
+      b.dataset.sub=r.sub||""; fxRows[r.id]={el:b,r};
+      list.appendChild(b);
+    });
+    root.appendChild(list);
+  });
+}
+function fxState(){
+  const p=S.props, sh=new Set(Array.isArray(p["glsl-shaders"])?p["glsl-shaders"]:[]), vf=Array.isArray(p.vf)?p.vf:[];
+  const L=(l)=>vf.some((f)=>f.label===l), G=(g)=>vf.some((f)=>f.graph&&f.graph.includes(g));
+  const on={}, val={};
+  let best=-1, bestId=null;
+  for(const pr of PRESETS) if(pr.set.every((x)=>sh.has(x))&&pr.set.length>best){ best=pr.set.length; bestId=pr.id; }
+  PRESETS.forEach((pr)=>{ on[pr.id]=pr.id===bestId; });
+  on.thinvf=sh.has("Anime4K_Thin_VeryFast"); on.thinf=sh.has("Anime4K_Thin_Fast"); on.thinhq=sh.has("Anime4K_Thin_HQ"); on.thinaio=on.thinvf&&on.thinf&&on.thinhq;
+  on.hq_l=L("HQDN3D_LOW"); on.hq_m=L("HQDN3D_MEDIUM"); on.hq_h=L("HQDN3D_HIGH");
+  on.dn_l=sh.has("denoise1"); on.dn_n=sh.has("nlmeans"); on.dn_h=sh.has("denoise3");
+  on.sharp=sh.has("adaptive-sharpen"); on.sharpdn=sh.has("sharpen_denoise");
+  on.deband=!!p.deband; on.hdeband=sh.has("hdeband"); on.deint=!!p.deinterlace; on.bwdif=G("bwdif")||L("BWDIF");
+  on.svp=L("SVP"); on.bwsvp=L("BWDIF")&&L("SVP"); on.icc=!!p["icc-profile-auto"];
+  const pan=Number(p.panscan)||0; on.ultra=pan>0; val.ultra=pan===0?"Off":pan>=1?"Full":Math.round(pan*100)+"%";
+  return {on,val};
+}
+function renderFx(){
+  $("fxNote").hidden=!!(S.bridge&&S.props.duration!=null);
+  const {on,val}=fxState(); const active=[];
+  for(const id in fxRows){
+    const {el:b,r}=fxRows[id], isOn=!!on[id];
+    if(r.type==="toggle"){ b.querySelector("input").checked=isOn; }
+    else if(r.type==="preset"){ b.querySelector("[data-chk]").classList.toggle("invisible",!isOn); }
+    else if(r.type==="value"){ b.querySelector("[data-val]").textContent=val[id]; }
+    b.querySelector("[data-t]").classList.toggle("text-accent",isOn&&r.type!=="value");
+    if(isOn&&r.type!=="value") active.push(r.title+(r.type==="preset"?"":""));
+    if(r.type==="value"&&isOn) active.push(r.title+" "+val[id]);
+  }
+  const box=$("fxActive"); box.innerHTML="";
+  if(!active.length) box.appendChild(el("span","t-sub text-subtext0","Nothing enabled"));
+  active.forEach((t)=>box.appendChild(el("span","badge badge-tint",t)));
+  renderPresets();
+}
+
+/* ---- Quick presets: each is a full target state; the planner presses only the keys needed to get there ---- */
+const PRESET_DEFS=[
+  {id:"anime",title:"Anime",sub:"Anime, cartoons",icon:"sparkles",tile:"bg-mauve",up:"f3",sh:["hdeband"]},
+  {id:"animes",title:"Anime + Smooth",sub:"Fast-action anime",icon:"zap",tile:"bg-green",up:"f3",sh:["hdeband"],svp:true},
+  {id:"cinema",title:"Cinema",sub:"Movies, series, 4K",icon:"clapperboard",tile:"bg-peach",sh:["adaptive-sharpen"],deband:true},
+  {id:"smooth",title:"Smooth",sub:"Sports, TV, footage",icon:"gauge",tile:"bg-sky",svp:true},
+  {id:"classic",title:"Classic",sub:"DVD, SD, old TV",icon:"history",tile:"bg-yellow",sh:["adaptive-sharpen"],hq:"m",bwdif:true,deband:true},
+  {id:"off",title:"Off",sub:"Plain playback",icon:"x",tile:"bg-surface2"},
+];
+/* Shaders that have their own toggle hotkey. Anything else in the list (Anime4K models) can only be cleared by a reset. */
+const SHKEY={denoise1:"F10",nlmeans:"Shift+F10",denoise3:"Ctrl+F10","adaptive-sharpen":"F11",sharpen_denoise:"Ctrl+F11",hdeband:"Ctrl+F6",
+  Anime4K_Thin_VeryFast:"Ctrl+1",Anime4K_Thin_Fast:"Ctrl+2",Anime4K_Thin_HQ:"Ctrl+3"};
+const HQKEY={l:"F9",m:"Shift+F9",h:"Ctrl+F9"};
+function curFx(){
+  const p=S.props, vf=Array.isArray(p.vf)?p.vf:[], L=(l)=>vf.some((f)=>f.label===l);
+  return {
+    sh:new Set((Array.isArray(p["glsl-shaders"])?p["glsl-shaders"]:[]).filter((x)=>String(x).trim())),
+    svp:L("SVP"), lbw:L("BWDIF"),
+    bw:vf.some((f)=>f.label!=="BWDIF"&&f.graph&&f.graph.includes("bwdif")),
+    hq:{l:L("HQDN3D_LOW"),m:L("HQDN3D_MEDIUM"),h:L("HQDN3D_HIGH")},
+    deband:!!p.deband, deint:!!p.deinterlace,
+  };
+}
+/* Returns the hotkeys that turn the current state c into preset d. Empty when already there. */
+function planPreset(c,d){
+  const keys=[], up=d.up?PRESETS.find((p)=>p.id===d.up):null;
+  const want=new Set([...(up?up.set:[]),...(d.sh||[])]);
+  const add=[...want].filter((x)=>!c.sh.has(x)), rem=[...c.sh].filter((x)=>!want.has(x));
+  if(add.length||rem.length){
+    if([...add,...rem].every((x)=>x in SHKEY)) [...add,...rem].forEach((x)=>keys.push(SHKEY[x]));   // only single-toggle shaders differ
+    else{                                                                                           // otherwise reset, then add extras
+      keys.push(up?up.key:"Ctrl+F4");
+      const base=new Set(up?up.set:[]);
+      [...want].filter((x)=>!base.has(x)).forEach((x)=>{ if(x in SHKEY) keys.push(SHKEY[x]); });
+    }
+  }
+  let svp=c.svp;
+  if(c.lbw){ keys.push("Ctrl+F12"); svp=false; }          // labeled BWDIF+SVP pair: Ctrl+F12 removes both
+  if(svp!==!!d.svp) keys.push("F12");
+  for(const l of ["l","m","h"]) if(c.hq[l]!==(d.hq===l)) keys.push(HQKEY[l]);
+  if(c.bw!==!!d.bwdif) keys.push("Ctrl+F7");
+  if(c.deband!==!!d.deband) keys.push("F6");
+  if(c.deint!==!!d.deint) keys.push("F7");
+  return keys;
+}
+const fxReady=()=>S.bridge&&Array.isArray(S.props["glsl-shaders"])&&Array.isArray(S.props.vf);
+const sleep=(ms)=>new Promise((r)=>setTimeout(r,ms));
+let fxBusy=false;
+async function applyPreset(id){
+  const d=PRESET_DEFS.find((x)=>x.id===id);
+  if(!d||fxBusy||!fxReady()) return;
+  const keys=planPreset(curFx(),d);
+  if(!keys.length){ UI.toast(d.title+" is already active","info"); return; }
+  fxBusy=true; renderPresets();
+  for(const k of keys){ send({cmd:"hotkey",key:k}); await sleep(250); }   // spaced out: shader and SVP changes are heavy
+  await sleep(300);
+  fxBusy=false; renderPresets();
+  UI.toast(d.title+" applied","success");
+}
+function buildPresets(){
+  const box=$("fxPresets");
+  PRESET_DEFS.forEach((d)=>{
+    const b=el("button","card card-tap relative flex flex-col items-start gap-2 !p-3 text-left disabled:pointer-events-none disabled:opacity-40"); b.dataset.preset=d.id;
+    b.innerHTML=`<div class="row-tile ${d.tile}">${ico(d.icon,"size-4")}</div><div><div class="t-sub font-semibold" data-pt>${d.title}</div><div class="t-cap text-subtext0">${d.sub}</div></div><span data-pchk class="invisible absolute top-3 right-3 text-accent">${ico("check","size-5")}</span>`;
+    box.appendChild(b);
+  });
+}
+function renderPresets(){
+  const ready=fxReady(), cur=ready?curFx():null;
+  $("fxPresetNote").hidden=ready;
+  let matched=false;
+  document.querySelectorAll("[data-preset]").forEach((b)=>{
+    const d=PRESET_DEFS.find((x)=>x.id===b.dataset.preset);
+    const on=ready&&!matched&&planPreset(cur,d).length===0;
+    if(on) matched=true;
+    b.disabled=!ready||fxBusy;
+    b.classList.toggle("outline-2",on); b.classList.toggle("outline-accent",on);
+    b.querySelector("[data-pchk]").classList.toggle("invisible",!on);
+  });
+  $("fxCustom").hidden=!(ready&&!matched);
+}
+document.addEventListener("click",(e)=>{ const b=e.target.closest("[data-preset]"); if(b) applyPreset(b.dataset.preset); });
+
+let quitArmed=false;
+document.addEventListener("click",(e)=>{
+  const b=e.target.closest("[data-hk]"); if(!b) return;
+  if(b.dataset.type==="quit"){
+    const s=b.querySelector("[data-s]");
+    if(!quitArmed){ quitArmed=true; s.textContent="Tap again to close Stremio"; s.classList.add("text-red"); setTimeout(()=>{ quitArmed=false; s.classList.remove("text-red"); s.innerHTML="Closes Stremio on the PC &middot; <span class=\"kbd\">q</span>"; },3000); return; }
+    quitArmed=false;
+  }
+  send({cmd:"hotkey",key:b.dataset.hk});
+  if(b.dataset.type==="action") UI.toast(b.querySelector("[data-t]").textContent,"info");
+});
+buildFx();
+buildPresets();
 
 /* ---- PWA: reconnect when the app returns to the foreground; service worker only where the browser allows it ---- */
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&(!S.ws||S.ws.readyState>1)) connect(); });

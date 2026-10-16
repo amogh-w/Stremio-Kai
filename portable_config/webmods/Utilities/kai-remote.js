@@ -10,8 +10,8 @@
     const R = (window.KaiRemote = { initialized: true, ws: null, props: {}, now: null, seq: 9000, lastTime: 0, lastTimeVal: -1 });
 
     // Only these mpv props leave the page. Notably not `path`, which holds the stream URL (debrid tokens).
-    const FORWARD = new Set(["time-pos", "duration", "pause", "volume", "mute", "speed", "track-list", "aid", "sid", "sub-delay", "paused-for-cache"]);
-    const EXTRA_OBSERVE = ["mute"];
+    const FORWARD = new Set(["time-pos", "duration", "pause", "volume", "mute", "speed", "track-list", "aid", "sid", "sub-delay", "paused-for-cache", "glsl-shaders", "vf", "deband", "deinterlace", "panscan", "icc-profile-auto"]);
+    const EXTRA_OBSERVE = ["mute", "glsl-shaders", "vf", "deband", "deinterlace", "panscan", "icc-profile-auto"];
 
     const up = (o) => {
       try { if (R.ws && R.ws.readyState === 1) R.ws.send(JSON.stringify(o)); } catch (e) {}
@@ -53,6 +53,12 @@
       if (name === "path") { observeExtra(); return; }
       if (!FORWARD.has(name)) return;
       if (name === "track-list") data = cleanTracks(data);
+      // Enhancement state for the Enhance tab: shader names only (no paths), filter label + graph only.
+      if (name === "glsl-shaders") data = (Array.isArray(data) ? data : []).map((p) => String(p).replace(/^.*[\\/]/, "").replace(/\.glsl$/i, ""));
+      if (name === "vf") data = (Array.isArray(data) ? data : []).map((f) => ({
+        label: (f && f.label) || "", name: (f && f.name) || "", enabled: !(f && f.enabled === false),
+        graph: f && f.params && typeof f.params.graph === "string" ? f.params.graph.slice(0, 120) : "",
+      }));
       R.props[name] = data;
       if (name === "time-pos") {
         // 20+ updates/s from mpv: pass one per second, plus any jump (seek).
@@ -283,6 +289,9 @@
           if (el && el !== document.body) return clickEl(el);
           return pressKey("Enter");
         }
+        case "hotkey": // same key mpv would get from the keyboard, so input.conf stays the single source of truth
+          if (typeof m.key === "string" && /^(?:(?:Ctrl|Shift)\+)?(?:F(?:[1-9]|1[0-2])|[1-4])$|^[qtTu`]$/.test(m.key)) send("mpv-command", ["keypress", m.key]);
+          return;
         case "back": return history.back();
         case "key": return pressKey(m.key);
         case "open": return openRef(String(m.ref));
