@@ -148,6 +148,112 @@
   };
   $$("dialog.sheet").forEach(sheetDrag);
 
+  /* Horizontal rows (season chips, tabs, poster strips) have hidden scrollbars, so a mouse had no way to move them.
+     No markup needed: any element that scrolls sideways gets
+       - wheel to sideways scroll, on short rows only (chips and tabs, up to 72px tall), so tall strips never hijack page scrolling
+       - click-and-drag with a mouse, on every row
+     Touch keeps its native scrolling. */
+  const hscrollOf = (t) => {
+    for (let n = t; n && n !== document.body; n = n.parentElement) {
+      if (n.scrollWidth > n.clientWidth + 1) {
+        const o = getComputedStyle(n).overflowX;
+        if (o === "auto" || o === "scroll") return n;
+      }
+    }
+    return null;
+  };
+  document.addEventListener("wheel", (e) => {
+    if (e.ctrlKey || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return; // pinch zoom, or already a sideways wheel
+    const el = hscrollOf(e.target);
+    if (!el || el.clientHeight > 72) return;
+    const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+    const next = Math.max(0, Math.min(el.scrollWidth - el.clientWidth, el.scrollLeft + dy));
+    if (next === el.scrollLeft) return; // at an edge: let the page scroll on
+    el.scrollLeft = next;
+    e.preventDefault();
+  }, { passive: false });
+
+  let rowDrag = null;
+  document.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "mouse" || e.button !== 0) return;
+    const el = hscrollOf(e.target);
+    if (el) rowDrag = { el, x: e.clientX, left: el.scrollLeft, moved: false, snap: el.style.scrollSnapType };
+  });
+  document.addEventListener("pointermove", (e) => {
+    if (!rowDrag || e.pointerType !== "mouse") return;
+    const dx = e.clientX - rowDrag.x;
+    if (!rowDrag.moved) {
+      if (Math.abs(dx) < 6) return; // a click, not a drag
+      rowDrag.moved = true;
+      rowDrag.el.style.scrollSnapType = "none";
+      rowDrag.el.style.cursor = "grabbing";
+      document.body.style.userSelect = "none";
+    }
+    rowDrag.el.scrollLeft = rowDrag.left - dx;
+  });
+  const endRowDrag = () => {
+    if (!rowDrag) return;
+    if (rowDrag.moved) {
+      const el = rowDrag.el;
+      el.style.scrollSnapType = rowDrag.snap;
+      el.style.cursor = "";
+      document.body.style.userSelect = "";
+      const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); }; // the drag must not also "click" a chip or poster
+      el.addEventListener("click", swallow, true);
+      setTimeout(() => el.removeEventListener("click", swallow, true), 0);
+    }
+    rowDrag = null;
+  };
+  document.addEventListener("pointerup", endRowDrag);
+  document.addEventListener("pointercancel", endRowDrag);
+  document.addEventListener("dragstart", (e) => { if (hscrollOf(e.target)) e.preventDefault(); }); // no ghost-image drags inside rows
+
+  /* Motion helpers (only transform and opacity animate; reduced motion is honored in kit.css).
+     UI.play(el, "fade" | "pop" | "slide" | "shake" | "stagger", duration)  replays an entrance animation.
+       "stagger" rises the first 6 children one after another.
+     UI.reveal(img)         <img> inside a .skel wrapper: the wrapper shimmers until the picture loads, then it fades in.
+     UI.loadBg(el, url, cb) background-image that fades in once it has loaded (cb runs then, e.g. to remove a skeleton). */
+  const play = (el, kind = "fade", dur) => {
+    if (!el) return;
+    el.classList.remove("anim", "m-pop", "m-slide", "m-fade", "m-shake", "m-stagger");
+    if (kind === "stagger") [...el.children].forEach((c, i) => c.style.setProperty("--i", Math.min(i, 5)));
+    if (dur) el.style.setProperty("--m-dur", dur);
+    void el.offsetWidth; // restart the animation
+    el.classList.add("anim", "m-" + kind);
+  };
+  const reveal = (img) => {
+    img.classList.add("opacity-0", "transition-opacity", "duration-300");
+    const done = () => {
+      img.classList.remove("opacity-0");
+      const w = img.closest(".skel");
+      if (w) w.classList.remove("skel");
+    };
+    if (img.complete && img.naturalWidth) done();
+    else {
+      img.addEventListener("load", done, { once: true });
+      img.addEventListener("error", done, { once: true });
+    }
+  };
+  const loadBg = (el, url, onShown) => {
+    if (!el) return;
+    const key = url || "";
+    if (el.dataset.bg === key) return;
+    el.dataset.bg = key;
+    if (!url) { el.style.backgroundImage = ""; return; }
+    const i = new Image();
+    i.onload = () => {
+      if (el.dataset.bg !== key) return; // a newer picture was requested meanwhile
+      el.style.transition = "none";
+      el.style.opacity = 0;
+      el.style.backgroundImage = `url("${url}")`;
+      void el.offsetWidth;
+      el.style.transition = "opacity .5s var(--ease)";
+      el.style.opacity = 1;
+      if (onShown) onShown();
+    };
+    i.src = url;
+  };
+
   icons();
-  window.UI = { icon, icons, toast, sheetDrag };
+  window.UI = { icon, icons, toast, sheetDrag, play, reveal, loadBg };
 })();

@@ -112,7 +112,16 @@
     // ---- home (continue watching, catalog rows, hero) ------------------------------------------
     // Items carry only ids. Routes, and above all stream deep links (which embed debrid tokens),
     // are resolved here at command time and never leave the PC.
-    const cap = (v, n) => (typeof v === "string" ? v.slice(0, n) : null);
+    // Kai's metadata store keeps some text HTML-escaped ("Something&#x27;s in the water."). The phone shows plain
+    // text, so decode it here, once, for everything that is forwarded. A textarea decodes entities without running anything.
+    let decoder = null;
+    const decode = (s) => {
+      if (s.indexOf("&") < 0) return s;
+      decoder = decoder || document.createElement("textarea");
+      decoder.innerHTML = s;
+      return decoder.value;
+    };
+    const cap = (v, n) => (typeof v === "string" ? decode(v).slice(0, n) : null);
     const enc = encodeURIComponent;
     const epLabel = (it) => {
       const p = String((it.state && it.state.videoId) || "").split(":");
@@ -144,7 +153,7 @@
         if (!h || !h.imdb || !h.background) continue;
         home.hero.push({
           ref: "detail:" + enc(h.type || "movie") + "/" + enc(h.imdb), title: cap(h.title, 120), tagline: cap(h.tagline, 160),
-          year: cap(h.year, 8), runtime: cap(h.runtime, 20), genres: (h.genres || []).slice(0, 3),
+          year: cap(h.year, 8), runtime: cap(h.runtime, 20), genres: (h.genres || []).slice(0, 3).map((g) => cap(g, 30)),
           rating: h.ratings && h.ratings.imdb ? h.ratings.imdb.score : null, plot: cap(h.plot, 320),
           background: h.background, logo: h.logo || null,
         });
@@ -250,6 +259,70 @@
       } catch (e) {}
     };
 
+    // ---- player ••• menu actions (labels match the PC UI; found by text so hashed class names do not matter) ----
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const norm = (t) => String(t || "").replace(/\s+/g, " ").trim().toLowerCase();
+    const findItem = (label) => {
+      const want = norm(label);
+      const hits = [...document.querySelectorAll("body *")].filter((n) => norm(n.textContent) === want);
+      const deepest = hits.find((n) => !hits.some((h) => h !== n && n.contains(h)));
+      return deepest ? deepest.closest('[class*="option"],[class*="button"],[tabindex],button,a,li') || deepest : null;
+    };
+    const openMore = () => {
+      const bar = document.querySelector('[class*="control-bar-buttons-container"]');
+      const btns = bar ? [...bar.querySelectorAll('[class*="button-container"]')] : [];
+      const last = btns[btns.length - 1];
+      if (!last) return false;
+      clickEl(last);
+      return true;
+    };
+    const result = (action, ok, msg) => up({ k: "result", action, ok, msg });
+    const menuAction = async (action, label, okMsg) => {
+      try {
+        if (!/^#\/player/.test(location.hash)) return result(action, false, "Start playing something first");
+        let item = findItem(label);
+        if (!item) {
+          if (!openMore()) return result(action, false, "Could not find the player controls");
+          for (let i = 0; i < 10 && !item; i++) { await sleep(80); item = findItem(label); }
+        }
+        if (!item) return result(action, false, "\"" + label + "\" is not in the player menu");
+        if (action === "vlc") setProp("pause", true); // do not play twice
+        clickEl(item);
+        await sleep(150);
+        document.body.click(); // close the menu if it is still open
+        result(action, true, okMsg);
+      } catch (e) { result(action, false, "That did not work"); }
+    };
+    // The playing stream's link. Used for "Copy" (PC clipboard, via the daemon over loopback) and "Show" (one phone, on request).
+    const streamUrl = async () => {
+      const t = window.services.core.transport;
+      const sel = ((await t.getState("player")) || {}).selected;
+      const stream = sel && sel.stream;
+      let url = stream && typeof stream.url === "string" ? stream.url : null;
+      if (!url && stream && stream.infoHash) {
+        const ss = (await t.getState("streaming_server")) || {};
+        const base = typeof ss.baseUrl === "string" ? ss.baseUrl : ss.baseUrl && typeof ss.baseUrl.content === "string" ? ss.baseUrl.content : null;
+        if (base) url = base.replace(/\/$/, "") + "/" + stream.infoHash + "/" + (stream.fileIdx == null ? 0 : stream.fileIdx);
+      }
+      return url;
+    };
+    const copyLink = async () => {
+      try {
+        const url = await streamUrl();
+        if (!url) return result("copy", false, "No stream link available");
+        up({ k: "clip", text: url });
+      } catch (e) { result("copy", false, "That did not work"); }
+    };
+    // The daemon hands the answer only to the phone whose request id matches, once. Never cached, never broadcast.
+    const fetchUrl = async (rid) => {
+      try {
+        if (!/^[\w-]{8,64}$/.test(String(rid))) return;
+        const url = await streamUrl();
+        if (!url) return result("url", false, "No stream link available");
+        up({ k: "url", rid: String(rid), text: url });
+      } catch (e) { result("url", false, "That did not work"); }
+    };
+
     const attachCore = () => {
       try {
         const core = window.services && window.services.core;
@@ -294,6 +367,12 @@
           return;
         case "back": return history.back();
         case "key": return pressKey(m.key);
+        case "more":
+          if (m.action === "copy") return copyLink();
+          if (m.action === "url") return fetchUrl(m.rid);
+          if (m.action === "download") return menuAction("download", "Download this video", "Download started on the PC");
+          if (m.action === "vlc") return menuAction("vlc", "Play in VLC", "Opening VLC on the PC");
+          return;
         case "open": return openRef(String(m.ref));
         case "video": return openVideo(String(m.id));
         case "play": return playStream(Number(m.idx), Number(m.rev));

@@ -6,12 +6,15 @@ use axum::{
 };
 use image::{imageops::FilterType, ImageFormat};
 use serde::Deserialize;
+use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::{
+    collections::HashSet,
+    net::IpAddr,
     path::PathBuf,
     sync::{
         atomic::{AtomicUsize, Ordering},
-        Arc,
+        Arc, Mutex,
     },
     time::Duration,
 };
@@ -19,14 +22,24 @@ use std::{
 const MAX_BYTES: usize = 10 * 1024 * 1024;
 const CACHE_CAP: u64 = 300 * 1024 * 1024;
 const CACHE_TRIM_TO: u64 = 240 * 1024 * 1024;
-// Hosts the stock catalogs and Kai's metadata use. Extend via `kai-remote-hosts.txt` (one host per line).
-const DEFAULT_HOSTS: [&str; 5] = [
+// Well-known artwork hosts. On top of these, any host that appears in the poster/background/logo/thumbnail of data the
+// PC itself is showing is learned at runtime (see `learn_from`). Extend by hand via `kai-remote-hosts.txt` (one per line).
+const DEFAULT_HOSTS: [&str; 13] = [
     "images.metahub.space",
     "episodes.metahub.space",
-    "image.tmdb.org",
     "live.metahub.space",
+    "image.tmdb.org",
     "media.kitsu.app",
+    "media.kitsu.io",
+    "kitsu-production-media.s3.us-west-002.backblazeb2.com",
+    "cdn.myanimelist.net",
+    "s4.anilist.co",
+    "artworks.thetvdb.com",
+    "assets.fanart.tv",
+    "m.media-amazon.com",
+    "static.tvmaze.com",
 ];
+const MAX_LEARNED: usize = 300;
 
 #[derive(Deserialize)]
 pub struct ImgQuery {
@@ -38,6 +51,7 @@ pub struct Img {
     client: reqwest::Client,
     dir: PathBuf,
     hosts: Arc<Vec<String>>,
+    learned: Arc<Mutex<HashSet<String>>>,
     writes: AtomicUsize,
 }
 
@@ -45,10 +59,53 @@ fn exe_dir() -> PathBuf {
     std::env::current_exe().ok().and_then(|p| p.parent().map(|d| d.to_path_buf())).unwrap_or_default()
 }
 
-fn host_allowed(hosts: &[String], url: &reqwest::Url) -> bool {
+fn host_allowed(hosts: &[String], learned: &Mutex<HashSet<String>>, url: &reqwest::Url) -> bool {
+    // `domain()` is None for an IP-address host, so URLs like http://192.168.1.1/ or http://[::1]/ are never fetched.
     matches!(url.scheme(), "http" | "https")
         && url.port().is_none()
-        && url.host_str().is_some_and(|h| hosts.iter().any(|a| a == h))
+        && url.domain().is_some_and(|d| hosts.iter().any(|a| a == d) || learned.lock().unwrap().contains(d))
+}
+
+/// False for loopback, private, link-local, CGNAT, multicast and other non-routable addresses.
+fn is_public_ip(ip: IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(v) => {
+            let o = v.octets();
+            !(v.is_private()
+                || v.is_loopback()
+                || v.is_link_local()
+                || v.is_broadcast()
+                || v.is_documentation()
+                || v.is_unspecified()
+                || v.is_multicast()
+                || o[0] == 0
+                || (o[0] == 100 && (o[1] & 0xc0) == 64)
+                || o[0] >= 240)
+        }
+        IpAddr::V6(v) => {
+            if let Some(m) = v.to_ipv4_mapped() {
+                return is_public_ip(IpAddr::V4(m));
+            }
+            let s = v.segments();
+            !(v.is_loopback() || v.is_unspecified() || v.is_multicast() || (s[0] & 0xfe00) == 0xfc00 || (s[0] & 0xffc0) == 0xfe80)
+        }
+    }
+}
+
+/// DNS for the image client: only public addresses come back, on the first request and on every redirect hop.
+struct PublicOnly;
+impl reqwest::dns::Resolve for PublicOnly {
+    fn resolve(&self, name: reqwest::dns::Name) -> reqwest::dns::Resolving {
+        let host = name.as_str().to_string();
+        Box::pin(async move {
+            let addrs: Vec<std::net::SocketAddr> =
+                tokio::net::lookup_host((host.as_str(), 0)).await?.filter(|a| is_public_ip(a.ip())).collect();
+            if addrs.is_empty() {
+                return Err("host does not resolve to a public address".into());
+            }
+            Ok(Box::new(addrs.into_iter()) as reqwest::dns::Addrs)
+        })
+    }
 }
 
 fn ext_for(ct: &str) -> &'static str {
@@ -76,10 +133,11 @@ impl Img {
             hosts.extend(extra.lines().map(|l| l.trim().to_lowercase()).filter(|l| !l.is_empty() && !l.starts_with('#')));
         }
         let hosts = Arc::new(hosts);
-        let policy_hosts = hosts.clone();
+        let learned: Arc<Mutex<HashSet<String>>> = Arc::default();
+        let (policy_hosts, policy_learned) = (hosts.clone(), learned.clone());
         // Redirects are re-checked against the allowlist, so an allowed host cannot bounce us elsewhere.
         let policy = reqwest::redirect::Policy::custom(move |a| {
-            if a.previous().len() > 3 || !host_allowed(&policy_hosts, a.url()) {
+            if a.previous().len() > 3 || !host_allowed(&policy_hosts, &policy_learned, a.url()) {
                 a.stop()
             } else {
                 a.follow()
@@ -87,13 +145,51 @@ impl Img {
         });
         let client = reqwest::Client::builder()
             .redirect(policy)
+            .dns_resolver(Arc::new(PublicOnly))
             .timeout(Duration::from_secs(15))
             .user_agent("KaiRemote/0.3")
             .build()
             .expect("http client");
         let dir = exe_dir().join("img-cache");
         let _ = std::fs::create_dir_all(&dir);
-        Self { client, dir, hosts, writes: AtomicUsize::new(0) }
+        Self { client, dir, hosts, learned, writes: AtomicUsize::new(0) }
+    }
+
+    /// Remembers the image hosts found in a message from the bridge (poster, background, logo, thumbnail fields).
+    /// The data is what the PC itself is displaying, so those hosts are artwork hosts; only domains are kept, and
+    /// anything that resolves to a non-public address is refused at fetch time by `PublicOnly`.
+    pub fn learn_from(&self, v: &Value) {
+        fn walk(v: &Value, out: &mut Vec<String>) {
+            match v {
+                Value::Object(m) => {
+                    for (k, x) in m {
+                        if matches!(k.as_str(), "poster" | "background" | "logo" | "thumbnail") {
+                            if let Some(s) = x.as_str() {
+                                out.push(s.to_string());
+                            }
+                        } else {
+                            walk(x, out);
+                        }
+                    }
+                }
+                Value::Array(a) => a.iter().for_each(|x| walk(x, out)),
+                _ => {}
+            }
+        }
+        let mut urls = Vec::new();
+        walk(v, &mut urls);
+        let mut set = self.learned.lock().unwrap();
+        for u in urls {
+            if let Ok(url) = reqwest::Url::parse(&u) {
+                if matches!(url.scheme(), "http" | "https") && url.port().is_none() {
+                    if let Some(d) = url.domain() {
+                        if set.len() < MAX_LEARNED {
+                            set.insert(d.to_string());
+                        }
+                    }
+                }
+            }
+        }
     }
 
     pub async fn serve(&self, q: ImgQuery) -> Response {
@@ -113,7 +209,7 @@ impl Img {
 
     async fn fetch(&self, raw: &str, w: u32) -> Result<(Vec<u8>, &'static str), StatusCode> {
         let url = reqwest::Url::parse(raw).map_err(|_| StatusCode::BAD_REQUEST)?;
-        if !host_allowed(&self.hosts, &url) {
+        if !host_allowed(&self.hosts, &self.learned, &url) {
             return Err(StatusCode::FORBIDDEN);
         }
         let key: String = Sha256::digest(format!("{url}|{w}")).iter().map(|b| format!("{b:02x}")).collect();
@@ -194,5 +290,50 @@ fn trim(dir: &std::path::Path) {
         if std::fs::remove_file(p).is_ok() {
             total -= len;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn ip(s: &str) -> bool {
+        is_public_ip(s.parse().unwrap())
+    }
+
+    #[test]
+    fn only_public_addresses_are_fetchable() {
+        for a in ["8.8.8.8", "151.101.1.1", "2606:4700:4700::1111"] {
+            assert!(ip(a), "{a} is public");
+        }
+        for a in ["127.0.0.1", "10.0.0.5", "192.168.178.1", "172.16.0.1", "169.254.169.254", "100.64.0.1", "0.0.0.0", "224.0.0.1", "::1", "fe80::1", "fc00::1", "::ffff:192.168.1.1"] {
+            assert!(!ip(a), "{a} must be refused");
+        }
+    }
+
+    #[test]
+    fn hosts_are_learned_from_artwork_fields_only() {
+        let img = Img::new();
+        img.learn_from(&json!({
+            "k": "home",
+            "home": { "rows": [{ "items": [{ "poster": "https://CDN.Example.org/p.jpg", "name": "https://not-art.example/x" }] }],
+                      "hero": [{ "background": "https://bg.example.net/b.jpg", "logo": "http://insecure.example.com/l.png" }] }
+        }));
+        let set = img.learned.lock().unwrap();
+        assert!(set.contains("cdn.example.org") && set.contains("bg.example.net") && set.contains("insecure.example.com"));
+        assert!(!set.contains("not-art.example"), "only poster/background/logo/thumbnail count");
+    }
+
+    #[test]
+    fn ip_literals_and_ports_are_never_allowed() {
+        let img = Img::new();
+        img.learn_from(&json!({ "poster": "http://127.0.0.1/a.jpg", "logo": "https://host.example:8443/l.png", "background": "http://[::1]/b.jpg" }));
+        let (h, l) = (&img.hosts, &img.learned);
+        for u in ["http://127.0.0.1/a.jpg", "http://[::1]/b.jpg", "https://host.example:8443/l.png", "ftp://images.metahub.space/x"] {
+            assert!(!host_allowed(h, l, &reqwest::Url::parse(u).unwrap()), "{u} must be refused");
+        }
+        assert!(host_allowed(h, l, &reqwest::Url::parse("https://images.metahub.space/poster/small/tt1/img").unwrap()));
+        assert!(host_allowed(h, l, &reqwest::Url::parse("https://kitsu-production-media.s3.us-west-002.backblazeb2.com/a.jpg").unwrap()));
     }
 }

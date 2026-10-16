@@ -21,6 +21,9 @@ pub enum Cmd {
     Hash { h: String },
     /// Press one of Kai's mpv hotkeys (see `HOTKEYS`). The bridge sends it to mpv as a `keypress`.
     Hotkey { key: String },
+    /// The player's ••• menu: `copy` (stream link to the PC clipboard), `download`, `vlc`.
+    /// `url` also carries `rid`, a random id the answer is matched to, so only the asking phone receives the link.
+    More { action: String, #[serde(default)] rid: Option<String> },
     /// Pick an episode on the open detail page.
     Video { id: String },
     /// Play stream `idx` from detail revision `rev` (the bridge rejects a stale revision).
@@ -64,6 +67,10 @@ const HOTKEYS: [&str; 36] = [
     "F9", "Shift+F9", "Ctrl+F9", "F10", "Shift+F10", "Ctrl+F10", "F11", "Ctrl+F11", "F12", "Ctrl+F12",
 ];
 
+fn rid_ok(r: &str) -> bool {
+    (8..=64).contains(&r.len()) && r.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+}
+
 fn video_id_ok(id: &str) -> bool {
     !id.is_empty() && id.len() <= 100 && id.bytes().all(|b| b.is_ascii_alphanumeric() || b":._%-".contains(&b))
 }
@@ -79,6 +86,8 @@ impl Cmd {
             Cmd::Aid { ref id } | Cmd::Sid { ref id } if track_id_ok(id) => Some(self),
             Cmd::Hash { ref h } if hash_ok(h) => Some(self),
             Cmd::Hotkey { ref key } if HOTKEYS.contains(&key.as_str()) => Some(self),
+            Cmd::More { ref action, .. } if matches!(action.as_str(), "copy" | "download" | "vlc") => Some(self),
+            Cmd::More { ref action, rid: Some(ref r) } if action == "url" && rid_ok(r) => Some(self),
             Cmd::Video { ref id } if video_id_ok(id) => Some(self),
             Cmd::Play { idx, .. } if idx < 1000 => Some(self),
             Cmd::Open { ref target } if ref_ok(target) => Some(self),
@@ -94,6 +103,21 @@ mod tests {
 
     fn ok(json: &str) -> bool {
         serde_json::from_str::<Cmd>(json).ok().and_then(Cmd::validate).is_some()
+    }
+
+    #[test]
+    fn more_actions_are_whitelisted() {
+        for a in ["copy", "download", "vlc"] {
+            assert!(ok(&format!(r#"{{"cmd":"more","action":"{a}"}}"#)), "{a} should be allowed");
+        }
+        for a in ["", "Copy", "rm", "copy;vlc", "open"] {
+            assert!(!ok(&format!(r#"{{"cmd":"more","action":"{a}"}}"#)), "{a:?} should be rejected");
+        }
+        // `url` needs a well-formed request id.
+        assert!(ok(r#"{"cmd":"more","action":"url","rid":"a1b2c3d4e5f60718"}"#));
+        for bad in [r#"{"cmd":"more","action":"url"}"#, r#"{"cmd":"more","action":"url","rid":"short"}"#, r#"{"cmd":"more","action":"url","rid":"bad id with spaces!!"}"#] {
+            assert!(!ok(bad), "{bad} should be rejected");
+        }
     }
 
     #[test]

@@ -201,7 +201,7 @@
   .badge-sq { border-radius: 6px; }
   .badge-outline { @apply border border-surface2 text-subtext1; }
   .count { @apply grid h-5 min-w-5 place-items-center rounded-full bg-red px-1.5 text-[11px] font-bold text-crust; }
-  .chip { @apply inline-flex h-8 items-center gap-1.5 rounded-full bg-surface0 px-3.5 text-sm font-medium text-text transition active:scale-95 aria-pressed:bg-accent aria-pressed:text-crust; }
+  .chip { @apply inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full whitespace-nowrap bg-surface0 px-3.5 text-sm font-medium text-text transition active:scale-95 aria-pressed:bg-accent aria-pressed:text-crust; }
 
   /* ---- Alerts ---- */
   .tone-info { --tone: var(--ctp-blue); }

@@ -2,6 +2,7 @@
 use crate::protocol::Cmd;
 use axum::extract::ws::{Message, WebSocket};
 use serde_json::{json, Map, Value};
+use std::collections::HashSet;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc, Mutex,
@@ -87,6 +88,21 @@ pub async fn bridge(app: Arc<App>, mut ws: WebSocket) {
 /// Update the cached snapshot from a bridge message and fan it out to the phones unchanged.
 fn ingest(app: &App, text: &str) {
     let Ok(v) = serde_json::from_str::<Value>(text) else { return };
+    // The stream link for "Copy stream link": goes to the PC clipboard, never to phones, never stored.
+    if v.get("k").and_then(Value::as_str) == Some("clip") {
+        let link = v.get("text").and_then(Value::as_str).unwrap_or("").to_string();
+        let tx = app.to_phones.clone();
+        std::thread::spawn(move || {
+            let ok = crate::clip::set_clipboard(&link);
+            let msg = if ok { "Stream link copied on the PC" } else { "Could not copy the link on the PC" };
+            let _ = tx.send(json!({ "k": "result", "action": "copy", "ok": ok, "msg": msg }).to_string());
+        });
+        return;
+    }
+    // Image hosts the PC is showing become fetchable through /img (public addresses only, see img.rs).
+    if matches!(v.get("k").and_then(Value::as_str), Some("home" | "detail" | "now")) {
+        app.img.learn_from(&v);
+    }
     {
         let mut s = app.snap.lock().unwrap();
         match v.get("k").and_then(Value::as_str) {
@@ -102,14 +118,23 @@ fn ingest(app: &App, text: &str) {
             }
             Some("home") => s.home = v.get("home").cloned().unwrap_or(Value::Null),
             Some("route") => s.route = v.get("hash").and_then(Value::as_str).unwrap_or("").to_string(),
-            Some("blocked") => {}
+            Some("blocked") | Some("result") | Some("url") => {} // forwarded as is, nothing cached ("url" is filtered per phone)
             _ => return,
         }
     }
     let _ = app.to_phones.send(text.to_string());
 }
 
+/// A stream-link answer goes only to the phone that asked for it (matched by request id), once.
+fn take_if_mine(msg: &str, pending: &mut HashSet<String>) -> bool {
+    serde_json::from_str::<Value>(msg)
+        .ok()
+        .and_then(|v| v.get("rid").and_then(Value::as_str).map(str::to_string))
+        .is_some_and(|rid| pending.remove(&rid))
+}
+
 pub async fn phone(app: Arc<App>, mut ws: WebSocket) {
+    let mut pending: HashSet<String> = HashSet::new();
     if ws.send(Message::Text(app.snapshot_msg().into())).await.is_err() {
         return;
     }
@@ -119,6 +144,12 @@ pub async fn phone(app: Arc<App>, mut ws: WebSocket) {
             msg = ws.recv() => match msg {
                 Some(Ok(Message::Text(t))) => {
                     if let Some(cmd) = serde_json::from_str::<Cmd>(t.as_str()).ok().and_then(Cmd::validate) {
+                        if let Cmd::More { action, rid: Some(rid) } = &cmd {
+                            if action == "url" {
+                                if pending.len() >= 8 { pending.clear(); }
+                                pending.insert(rid.clone());
+                            }
+                        }
                         let _ = app.to_bridge.send(serde_json::to_string(&cmd).unwrap());
                     }
                 }
@@ -126,12 +157,31 @@ pub async fn phone(app: Arc<App>, mut ws: WebSocket) {
                 _ => break,
             },
             out = rx.recv() => match out {
-                Ok(m) => { if ws.send(Message::Text(m.into())).await.is_err() { break; } }
+                Ok(m) => {
+                    if m.contains("\"k\":\"url\"") && !take_if_mine(&m, &mut pending) { continue; }
+                    if ws.send(Message::Text(m.into())).await.is_err() { break; }
+                }
                 Err(broadcast::error::RecvError::Lagged(_)) => {
                     if ws.send(Message::Text(app.snapshot_msg().into())).await.is_err() { break; }
                 }
                 Err(_) => break,
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn link_answers_reach_only_the_phone_that_asked() {
+        let mut mine: HashSet<String> = ["abcdef0123456789".to_string()].into();
+        let mut other: HashSet<String> = ["ffffffff00000000".to_string()].into();
+        let msg = r#"{"k":"url","rid":"abcdef0123456789","text":"https://x.invalid/s"}"#;
+        assert!(!take_if_mine(msg, &mut other), "another phone must not get the link");
+        assert!(take_if_mine(msg, &mut mine), "the asking phone gets it");
+        assert!(!take_if_mine(msg, &mut mine), "and only once");
+        assert!(!take_if_mine(r#"{"k":"url","text":"no rid"}"#, &mut mine), "an answer without an id goes nowhere");
     }
 }

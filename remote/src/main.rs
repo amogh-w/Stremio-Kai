@@ -1,5 +1,6 @@
 //! Kai Remote daemon: relays between the bridge webmod (loopback) and phone clients (LAN, token).
 mod auth;
+mod clip;
 mod img;
 mod protocol;
 mod relay;

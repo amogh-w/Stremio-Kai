@@ -10,3 +10,6 @@ remote/web/node_modules/
 
 # Local junction to the install's standalone mpv.exe (thumbfast helper)
 portable_config/mpv/
+
+# Runtime error logs written by Stremio (one file per day)
+portable_config/errors-*.txt

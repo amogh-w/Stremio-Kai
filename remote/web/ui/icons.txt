@@ -71,3 +71,7 @@ maximize
 power
 clapperboard
 history
+list-video
+link
+traffic-cone
+link-2

@@ -28,8 +28,14 @@
 
 <section id="tab-home">
   <div id="homeMain">
-    <div id="homeEmpty" hidden class="card my-3 text-center text-subtext0">Waiting for the home data from Stremio...</div>
+    <div id="homeEmpty" hidden class="card my-3 text-center text-subtext0"></div>
+    <div id="homeSkel" hidden aria-busy="true" aria-label="Loading home">
+      <div class="skel my-3 aspect-[16/10] !rounded-card"></div>
+      <div class="-mx-4 mt-[18px]"><div class="skel mx-4 mb-2 h-4 w-36"></div><div class="flex gap-2.5 overflow-hidden px-4"><div class="skel aspect-[2/3] w-28 shrink-0 !rounded-ctl"></div><div class="skel aspect-[2/3] w-28 shrink-0 !rounded-ctl"></div><div class="skel aspect-[2/3] w-28 shrink-0 !rounded-ctl"></div><div class="skel aspect-[2/3] w-28 shrink-0 !rounded-ctl"></div></div></div>
+      <div class="-mx-4 mt-[18px]"><div class="skel mx-4 mb-2 h-4 w-28"></div><div class="flex gap-2.5 overflow-hidden px-4"><div class="skel aspect-[2/3] w-28 shrink-0 !rounded-ctl"></div><div class="skel aspect-[2/3] w-28 shrink-0 !rounded-ctl"></div><div class="skel aspect-[2/3] w-28 shrink-0 !rounded-ctl"></div><div class="skel aspect-[2/3] w-28 shrink-0 !rounded-ctl"></div></div></div>
+    </div>
     <div id="hero" hidden class="relative my-3 aspect-[16/10] touch-pan-y overflow-hidden rounded-card bg-base">
+      <div class="skel absolute inset-0 !rounded-none"></div>
       <div id="heroBg" class="absolute inset-0 bg-cover bg-center"></div>
       <div class="absolute inset-0 bg-linear-to-t from-base/95 via-base/25 to-transparent"></div>
       <div class="absolute inset-x-3.5 bottom-3">
@@ -45,9 +51,18 @@
 
   <div id="detail" hidden>
     <div class="flex items-center pt-2.5 pb-1"><button id="dBack" class="btn btn-plain btn-sm gap-0.5 px-2"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-left"/></svg>Back</button></div>
-    <div id="dLoading" hidden class="t-sub px-2 py-4 text-center text-subtext0">Loading...</div>
+    <div id="dLoading" hidden aria-busy="true" aria-label="Loading">
+      <div class="skel mt-1.5 aspect-[16/10] !rounded-card"></div>
+      <div class="mt-3 space-y-2"><div class="skel h-3.5 w-full"></div><div class="skel h-3.5 w-4/5"></div></div>
+      <div class="mt-4 flex gap-2"><div class="skel h-8 w-20 !rounded-full"></div><div class="skel h-8 w-20 !rounded-full"></div><div class="skel h-8 w-20 !rounded-full"></div></div>
+      <div class="group-list mt-3">
+        <div class="row row-plain"><div class="skel aspect-video w-24 shrink-0"></div><div class="flex-1 space-y-2"><div class="skel h-3.5 w-2/3"></div><div class="skel h-3 w-1/3"></div></div></div>
+        <div class="row row-plain"><div class="skel aspect-video w-24 shrink-0"></div><div class="flex-1 space-y-2"><div class="skel h-3.5 w-2/3"></div><div class="skel h-3 w-1/3"></div></div></div>
+      </div>
+    </div>
     <div id="dBody" hidden>
       <div class="relative mt-1.5 aspect-[16/10] overflow-hidden rounded-card bg-base">
+        <div class="skel absolute inset-0 !rounded-none"></div>
         <div id="dBg" class="absolute inset-0 bg-cover bg-center"></div>
         <div class="absolute inset-0 bg-linear-to-t from-base/95 via-base/20 to-transparent"></div>
         <div class="absolute inset-x-3.5 bottom-3">
@@ -69,6 +84,7 @@
 
     <!-- Now playing: art header -->
     <div class="relative my-3 aspect-[16/10] overflow-hidden rounded-card bg-base">
+      <div class="skel absolute inset-0 !rounded-none"></div>
       <div id="npBg" class="absolute inset-0 bg-cover bg-center"></div>
       <div class="absolute inset-0 bg-linear-to-t from-base/95 via-base/30 to-transparent"></div>
       <div class="absolute inset-x-3.5 bottom-3">
@@ -83,15 +99,15 @@
       <input type="range" id="seek" min="0" max="1" step="1" value="0" class="range" aria-label="Seek">
       <div class="t-foot mt-1 flex justify-between tabular-nums text-subtext0"><span id="cur">0:00</span><span id="dur">0:00</span></div>
       <div class="mt-3 flex items-center justify-between">
-        <button class="btn btn-gray size-14 flex-col !gap-0.5 !px-0 text-xs" data-seek="-30" aria-label="Back 30 seconds"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-ccw"/></svg>30</button>
-        <button class="btn btn-gray size-14 flex-col !gap-0.5 !px-0 text-xs" data-seek="-10" aria-label="Back 10 seconds"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-ccw"/></svg>10</button>
-        <button id="pp" class="btn btn-filled size-[76px] !rounded-full !px-0" aria-label="Play or pause"><svg class="size-9 fill-current shrink-0" aria-hidden="true"><use href="/icons.svg#play"/></svg></button>
-        <button class="btn btn-gray size-14 flex-col !gap-0.5 !px-0 text-xs" data-seek="10" aria-label="Forward 10 seconds"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-cw"/></svg>10</button>
-        <button class="btn btn-gray size-14 flex-col !gap-0.5 !px-0 text-xs" data-seek="30" aria-label="Forward 30 seconds"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-cw"/></svg>30</button>
+        <button class="btn btn-gray size-12 min-[400px]:size-14 flex-col !gap-0.5 !px-0 text-xs" data-seek="-30" aria-label="Back 30 seconds"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-ccw"/></svg>30</button>
+        <button class="btn btn-gray size-12 min-[400px]:size-14 flex-col !gap-0.5 !px-0 text-xs" data-seek="-10" aria-label="Back 10 seconds"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-ccw"/></svg>10</button>
+        <button id="pp" class="btn btn-filled size-16 min-[400px]:size-[76px] !rounded-full !px-0" aria-label="Play or pause"><svg class="size-9 fill-current shrink-0" aria-hidden="true"><use href="/icons.svg#play"/></svg></button>
+        <button class="btn btn-gray size-12 min-[400px]:size-14 flex-col !gap-0.5 !px-0 text-xs" data-seek="10" aria-label="Forward 10 seconds"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-cw"/></svg>10</button>
+        <button class="btn btn-gray size-12 min-[400px]:size-14 flex-col !gap-0.5 !px-0 text-xs" data-seek="30" aria-label="Forward 30 seconds"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-cw"/></svg>30</button>
       </div>
       <div class="mt-4 flex gap-2">
-        <button id="skip" class="btn btn-tinted btn-capsule flex-1"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#fast-forward"/></svg>Skip intro</button>
-        <button id="next" class="btn btn-gray btn-capsule flex-1"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#skip-forward"/></svg>Next episode</button>
+        <button id="skip" class="btn btn-tinted btn-capsule flex-1 !px-3"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#fast-forward"/></svg>Skip intro</button>
+        <button id="next" class="btn btn-gray btn-capsule flex-1 !px-3"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#skip-forward"/></svg>Next episode</button>
       </div>
     </div>
 
@@ -124,6 +140,39 @@
         <button class="btn btn-gray btn-icon" data-delay="0.1" aria-label="Later"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#plus"/></svg></button>
       </div>
     </div>
+
+    <!-- The player's ••• menu. Everything here happens on the PC; the stream link never reaches this phone. -->
+    <div class="group-list my-3">
+      <button class="row w-full text-left" data-pact="copy">
+        <div class="row-tile bg-lavender"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#link"/></svg></div>
+        <div class="min-w-0 flex-1"><div class="t-sub">Copy stream link</div><div class="t-cap text-subtext0">Copies to the PC clipboard, not this phone</div></div>
+      <span data-pspin hidden class="spin-ring !size-5 shrink-0"></span>
+      </button>
+      <button class="row w-full text-left" data-pact="url">
+        <div class="row-tile bg-teal"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#link-2"/></svg></div>
+        <div class="min-w-0 flex-1"><div class="t-sub">Show stream URL</div><div class="t-cap text-subtext0">Fetch the link here so you can copy it on this phone</div></div>
+      <span data-pspin hidden class="spin-ring !size-5 shrink-0"></span>
+      </button>
+      <button class="row w-full text-left" data-pact="download">
+        <div class="row-tile bg-green"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#download"/></svg></div>
+        <div class="min-w-0 flex-1"><div class="t-sub">Download this video</div><div class="t-cap text-subtext0">Starts on the PC</div></div>
+      <span data-pspin hidden class="spin-ring !size-5 shrink-0"></span>
+      </button>
+      <button class="row w-full text-left" data-pact="vlc">
+        <div class="row-tile bg-peach"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#traffic-cone"/></svg></div>
+        <div class="min-w-0 flex-1"><div class="t-sub">Play in VLC</div><div class="t-cap text-subtext0">Opens VLC on the PC and pauses here</div></div>
+      <span data-pspin hidden class="spin-ring !size-5 shrink-0"></span>
+      </button>
+    </div>
+
+    <!-- Series only: jump to the show page on Home (playback stops, so it asks twice) -->
+    <div id="epsGroup" hidden class="group-list my-3">
+      <button id="epsBtn" class="row w-full text-left">
+        <div class="row-tile bg-teal"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#list-video"/></svg></div>
+        <div class="min-w-0 flex-1"><div class="t-sub">Episodes</div><div id="epsSub" class="t-cap text-subtext0">Open the show page to pick another episode</div></div>
+        <svg class="size-4 text-overlay1 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-right"/></svg>
+      </button>
+    </div>
   </div>
 </section>
 
@@ -131,7 +180,7 @@
   <div id="fxNote" hidden class="t-sub my-3 rounded-card bg-yellow/15 p-3.5 text-text">Start playing something first. These controls change the live player, so they only take effect during playback.</div>
   <div class="t-foot mt-3 mb-1.5 px-1 text-subtext0 uppercase tracking-wide">Quick presets</div>
   <div id="fxPresets" class="grid grid-cols-2 gap-2.5"></div>
-  <div id="fxPresetNote" hidden class="t-cap mt-1.5 px-1 text-subtext0">Waiting for the player's filter state. Start something playing and the presets unlock.</div>
+  <div id="fxPresetNote" hidden class="t-cap mt-1.5 px-1 text-subtext0"><span class="spin-ring mr-1.5 inline-block !size-3.5 !border-2 align-middle"></span>Waiting for the player's filter state. Start something playing and the presets unlock.</div>
   <div class="card my-3"><div class="t-foot flex items-center justify-between text-subtext0"><span>Active now</span><span id="fxCustom" hidden class="badge badge-outline">Custom</span></div><div id="fxActive" class="mt-2 flex flex-wrap gap-2"></div></div>
   <div id="fxList"></div>
 </section>
@@ -215,6 +264,31 @@
   </div>
 </dialog>
 
+<dialog id="d-url" class="sheet !bg-mantle max-h-[92dvh] overflow-y-auto">
+  <div class="p-4 pb-8">
+    <div class="sheet-grip -mx-4 -mt-4 mb-2 px-4 pt-4 pb-1">
+      <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-surface2"></div>
+      <div class="flex items-center justify-between"><h2 class="t-title2">Stream URL</h2><button class="btn btn-plain btn-sm" data-close>Done</button></div>
+    </div>
+    <div class="alert tone-warn my-3"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#triangle-alert"/></svg><div class="t-sub">This link can contain your debrid token. It was sent to this phone over your home network only. Do not share or post it.</div></div>
+    <textarea id="urlText" readonly spellcheck="false" class="field h-32 w-full resize-none py-2.5 font-mono text-xs break-all" aria-label="Stream URL"></textarea>
+    <div class="mt-4 flex gap-2"><button id="urlCopy" class="btn btn-filled flex-1"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#copy"/></svg>Copy to this phone</button></div>
+  </div>
+</dialog>
+
+<dialog id="d-eps" class="modal">
+  <!-- tabindex + autofocus keeps the first-focus ring off the buttons when the dialog opens -->
+  <div class="p-5 outline-none" tabindex="-1" autofocus>
+    <div class="mx-auto mb-3 grid size-12 place-items-center rounded-full bg-accent/15 text-accent"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#list-video"/></svg></div>
+    <h2 id="epsTitle" class="t-title3 text-center"></h2>
+    <p id="epsText" class="t-sub mt-1.5 text-center text-subtext1"></p>
+    <div class="mt-5 flex gap-3">
+      <button class="btn btn-gray flex-1" data-close>Cancel</button>
+      <button id="epsGo" class="btn btn-filled flex-1" data-close>Open show</button>
+    </div>
+  </div>
+</dialog>
+
 <script src="/ui.js"></script>
 <script>
 "use strict";
@@ -229,10 +303,13 @@ const send=(o)=>{ if(S.ws&&S.ws.readyState===1) S.ws.send(JSON.stringify(o)); bu
 const ico=(n,cls)=>`<svg class="${cls||"size-5"} shrink-0" aria-hidden="true"><use href="/icons.svg#${n}"/></svg>`;
 /* render() runs on every live update (about once a second). Re-creating an icon each time makes it flicker,
    so only touch the DOM when the icon name actually changes. */
-const setIcon=(btn,name,cls)=>{ if(btn.dataset.icon===name) return; btn.dataset.icon=name; btn.innerHTML=ico(name,cls); };
+const setIcon=(btn,name,cls)=>{ if(btn.dataset.icon===name) return; const had=!!btn.dataset.icon; btn.dataset.icon=name; btn.innerHTML=ico(name,cls); if(had) UI.play(btn.firstElementChild,"pop",".3s"); };
 const optText=(sel)=>sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:"";
 const el=(tag,cls,text)=>{ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; };
 const HINT="t-sub px-2 py-4 text-center text-subtext0";
+const skelRows=(n)=>{ const l=el("div","group-list"); l.setAttribute("aria-busy","true"); for(let i=0;i<n;i++){ const r=el("div","row row-plain flex-col !items-start !gap-1.5 py-3"); r.appendChild(el("div","skel h-3.5 w-2/3")); r.appendChild(el("div","skel h-3 w-1/2")); l.appendChild(r); } return l; };
+const dotsRow=()=>{ const d=el("div","flex justify-center py-4"); d.innerHTML='<div class="spin-dots" role="status" aria-label="Loading"><i></i><i></i><i></i></div>'; return d; };
+const bgLoad=(e,url)=>UI.loadBg(e,url,()=>{ const s=e.parentElement.querySelector(":scope > .skel"); if(s) s.remove(); });
 const paint=(r)=>r.style.setProperty("--p",((r.value-r.min)/(r.max-r.min||1))*100+"%");
 
 const fmt=(s)=>{ s=Math.max(0,Math.floor(s||0)); const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
@@ -247,15 +324,16 @@ const label=(t)=>[t.lang&&t.lang.toUpperCase(),t.title,t.codec].filter(Boolean).
 
 function render(){
   const p=S.props, playing=S.bridge && p.duration!=null;
-  $("dot").classList.toggle("is-on",S.bridge); $("cfgStatus").textContent=S.bridge?"Connected":"Waiting";
+  $("dot").classList.toggle("is-on",S.bridge); $("dot").classList.toggle("animate-pulse",!S.bridge); $("cfgStatus").textContent=S.bridge?"Connected":"Waiting";
   $("status").textContent=S.bridge?"Connected to Stremio":(S.ws&&S.ws.readyState===1?"Waiting for Stremio...":"Connecting...");
   $("off").hidden=playing; $("player").hidden=!playing;
   const n=S.now;
   $("title").textContent=n?(n.name||n.title||""):"";
   $("ep").textContent=n&&n.season!=null?`S${n.season} E${n.episode}${n.title&&n.title!==n.name?" - "+n.title.replace(/^.* - /,""):""}`:"";
   const setImg=(e,src)=>{ if(src){ if(e.src!==src) e.src=src; e.hidden=false; } else e.hidden=true; };
-  setImg($("logo"),n&&img(n.logo,400)); $("title").hidden=!!(n&&n.logo); const nb=n&&n.background; $("npBg").style.backgroundImage=nb?`url("${img(nb,900)}")`:"";
+  setImg($("logo"),n&&img(n.logo,400)); $("title").hidden=!!(n&&n.logo); const nb=n&&n.background; bgLoad($("npBg"),nb?img(nb,900):"");
   const bg=$("backdrop"); const b=n&&n.background; bg.style.backgroundImage=b?`url("${img(b,900)}")`:""; bg.style.opacity=(b&&cfg.backdrop)?0.3:0;
+  $("epsGroup").hidden=!(n&&n.type==="series"&&n.id);
   if(S.tab==="fx") renderFx();
   if(!playing) return;
   const dur=p.duration||0;
@@ -275,10 +353,10 @@ function render(){
   if(S.tab==="fx") renderFx();
 }
 
-function tile(it,opts){
+function tile(it,opts,ix){
   const b=el("button","relative w-28 shrink-0 snap-start text-left"); b.dataset.ref=it.ref; if(it.more) b.dataset.more=it.more;
-  const wrap=el("div","relative");
-  const im=el("img","block aspect-[2/3] w-full rounded-ctl bg-surface0 object-cover"); im.loading="lazy"; im.alt=""; im.src=img(it.poster,240); wrap.appendChild(im);
+  const wrap=el("div","relative"+(ix<6?" skel !rounded-ctl":""));   // only the first few shimmer: every shimmer is a running animation
+  const im=el("img","block aspect-[2/3] w-full rounded-ctl bg-surface0 object-cover"); im.loading="lazy"; im.alt=""; im.src=img(it.poster,240); UI.reveal(im); wrap.appendChild(im);
   if(opts&&opts.progress>0){ const bar=el("div","absolute inset-x-1.5 bottom-1.5 h-1 overflow-hidden rounded-sm bg-crust/60"); const i=el("div","h-full rounded-sm bg-accent"); i.style.width=opts.progress+"%"; bar.appendChild(i); wrap.appendChild(bar); }
   b.appendChild(wrap);
   b.appendChild(el("div","mt-1 truncate text-xs text-text",it.name||""));
@@ -287,13 +365,13 @@ function tile(it,opts){
 }
 function section(title,items,mk){
   const sec=el("div","-mx-4 mt-[18px]"); sec.appendChild(el("h3","t-sub mx-4 mb-2 font-semibold text-subtext0",title));
-  const st=el("div","flex snap-x snap-proximity gap-2.5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden");
-  items.forEach(i=>st.appendChild(mk(i))); sec.appendChild(st); return sec;
+  const st=el("div","flex snap-x snap-proximity scroll-px-4 gap-2.5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden");   // scroll-px-4: snapping keeps the 16px gutter
+  items.forEach((i,ix)=>st.appendChild(mk(i,ix))); sec.appendChild(st); return sec;
 }
 function renderHero(){
   const hs=(S.home&&S.home.hero)||[]; $("hero").hidden=!hs.length; $("heroDots").innerHTML="";
   if(!hs.length) return; const h=hs[S.hero%hs.length]; $("hero").dataset.ref=h.ref;
-  $("heroBg").style.backgroundImage=`url("${img(h.background,900)}")`;
+  bgLoad($("heroBg"),img(h.background,900));
   const lg=$("heroLogo"); if(h.logo){ lg.src=img(h.logo,400); lg.hidden=false; } else lg.hidden=true;
   $("heroTitle").textContent=h.logo?"":h.title;
   $("heroMeta").textContent=[h.year,h.runtime,(h.genres||[]).join(", "),h.rating?"★ "+h.rating:""].filter(Boolean).join("  ·  ");
@@ -302,10 +380,16 @@ function renderHero(){
 }
 function renderHome(){
   const h=S.home; const has=h&&((h.cw&&h.cw.length)||(h.rows&&h.rows.length)||(h.hero&&h.hero.length));
-  $("homeEmpty").hidden=!!has||!S.bridge; renderHero();
-  const box=$("homeRows"); box.innerHTML=""; if(!h) return;
-  if(h.cw&&h.cw.length) box.appendChild(section("Continue watching",h.cw,(i)=>tile(i,{progress:i.progress,label:i.label})));
-  (h.rows||[]).forEach(r=>{ if(r.items.length) box.appendChild(section(r.name,r.items,(i)=>tile(i))); });
+  const loading=S.bridge&&!h, empty=!!h&&!has;
+  $("homeSkel").hidden=!loading;
+  const he=$("homeEmpty"); he.hidden=!(!S.bridge||empty);
+  if(!S.bridge) he.innerHTML='<div class="flex items-center justify-center gap-3"><span class="spin-ring"></span>Waiting for Stremio...</div>';
+  else if(empty) he.textContent="Nothing to show yet. Open something on the PC and it will appear here.";
+  renderHero();
+  const box=$("homeRows"); box.innerHTML=""; if(!h){ S.homeIn=false; return; }
+  if(h.cw&&h.cw.length) box.appendChild(section("Continue watching",h.cw,(i,ix)=>tile(i,{progress:i.progress,label:i.label},ix)));
+  (h.rows||[]).forEach(r=>{ if(r.items.length) box.appendChild(section(r.name,r.items,(i,ix)=>tile(i,undefined,ix))); });
+  if(!S.homeIn&&box.children.length){ S.homeIn=true; UI.play(box,"stagger"); }   // rows rise in once, not on every refresh
 }
 setInterval(()=>{ const n=(S.home&&S.home.hero||[]).length; if(cfg.heroRotate&&n>1&&S.tab==="home"&&!document.hidden){ S.hero=(S.hero+1)%n; renderHero(); } },8000);
 
@@ -318,38 +402,47 @@ function renderDetail(){
   $("dLoading").hidden=!!d; $("dBody").hidden=!d;
   if(!d) return;
   if(S.lastDetailId!==d.id){ S.lastDetailId=d.id; S.season=null; $("dDesc").classList.remove("is-on"); window.scrollTo(0,0); }
-  $("dBg").style.backgroundImage=d.background?`url("${img(d.background,900)}")`:"";
+  bgLoad($("dBg"),d.background?img(d.background,900):"");
   const lg=$("dLogo"); if(d.logo){ lg.src=img(d.logo,400); lg.hidden=false; } else lg.hidden=true;
   $("dTitle").textContent=d.logo?"":d.name;
   $("dMeta").textContent=[d.releaseInfo,d.runtime,d.rating?"★ "+d.rating:""].filter(Boolean).join("  ·  ");
   $("dDesc").textContent=d.description||"";
 
-  // episodes (series only): season chips plus a divided list
-  const eps=$("dEps"); eps.innerHTML="";
+  // episodes (series only): season chips plus a divided list. Rebuilt only when its content changes, so an
+  // entrance animation is not cut short (and nothing flickers) when the next live update arrives.
+  const eps=$("dEps");
   const vids=(d.videos||[]).filter(v=>v.season!=null&&v.episode!=null);
-  if(d.type==="series"&&vids.length){
-    const seasons=[...new Set(vids.map(v=>v.season))].sort((a,b)=>a-b);
-    const selVid=vids.find(v=>v.id===d.selected);
-    if(S.season==null||!seasons.includes(S.season)) S.season=selVid?selVid.season:(seasons.find(x=>x>0)??seasons[0]);
-    const bar=el("div","flex gap-2 overflow-x-auto pt-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden");
-    seasons.forEach(n=>{ const b=el("button","chip",n===0?"Specials":"Season "+n); b.setAttribute("aria-pressed",n===S.season); b.dataset.season=n; bar.appendChild(b); });
-    eps.appendChild(bar);
-    const list=el("div","group-list");
-    vids.filter(v=>v.season===S.season).sort((a,b)=>a.episode-b.episode).forEach(v=>{
-      const b=el("button","row row-plain w-full text-left"+(v.id===d.selected?" bg-accent/15":"")); b.dataset.video=v.id;
-      if(v.thumbnail){ const im=el("img","aspect-video w-24 shrink-0 rounded-lg bg-surface0 object-cover"); im.loading="lazy"; im.alt=""; im.src=img(v.thumbnail,240); b.appendChild(im); }
-      const t=el("div","min-w-0 flex-1"); t.appendChild(el("div","t-sub",`${v.episode}. ${v.title||"Episode "+v.episode}`));
-      t.appendChild(el("div","t-cap text-subtext0",[v.watched?"✓ Watched":"",v.released||""].filter(Boolean).join("  ·  ")));
-      b.appendChild(t); list.appendChild(b);
-    });
-    eps.appendChild(list);
+  const isSeries=d.type==="series"&&vids.length>0;
+  const seasons=isSeries?[...new Set(vids.map(v=>v.season))].sort((a,b)=>a-b):[];
+  if(isSeries){ const selVid=vids.find(v=>v.id===d.selected); if(S.season==null||!seasons.includes(S.season)) S.season=selVid?selVid.season:(seasons.find(x=>x>0)??seasons[0]); }
+  const esig=isSeries?JSON.stringify([d.id,S.season,d.selected,vids.map(v=>[v.id,v.watched,v.title,v.thumbnail])]):"";
+  if(eps.dataset.sig!==esig){
+    eps.dataset.sig=esig; eps.innerHTML="";
+    if(isSeries){
+      const bar=el("div","flex gap-2 overflow-x-auto pt-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden");
+      seasons.forEach(n=>{ const b=el("button","chip",n===0?"Specials":"Season "+n); b.setAttribute("aria-pressed",n===S.season); b.dataset.season=n; bar.appendChild(b); });
+      eps.appendChild(bar);
+      const list=el("div","group-list");
+      vids.filter(v=>v.season===S.season).sort((a,b)=>a.episode-b.episode).forEach(v=>{
+        const b=el("button","row row-plain w-full text-left"+(v.id===d.selected?" bg-accent/15":"")); b.dataset.video=v.id;
+        if(v.thumbnail){ const im=el("img","aspect-video w-24 shrink-0 rounded-lg bg-surface0 object-cover"); im.loading="lazy"; im.alt=""; im.src=img(v.thumbnail,240); b.appendChild(im); }
+        const t=el("div","min-w-0 flex-1"); t.appendChild(el("div","t-sub",`${v.episode}. ${v.title||"Episode "+v.episode}`));
+        t.appendChild(el("div","t-cap text-subtext0",[v.watched?"\u2713 Watched":"",v.released||""].filter(Boolean).join("  \u00b7  ")));
+        b.appendChild(t); list.appendChild(b);
+      });
+      eps.appendChild(list);
+      const ek=d.id+":"+S.season; if(S.epsKey!==ek){ S.epsKey=ek; UI.play(list,"stagger"); }   // replay only when the show or season changes
+    }
   }
 
   // streams: one divided list per add-on
-  const box=$("dStreams"); box.innerHTML="";
+  const box=$("dStreams");
   const needEp=d.type==="series"&&vids.length&&!d.selected;
+  const ssig=JSON.stringify([d.id,d.selected,!!needEp,!!d.loading,(d.groups||[]).map(g=>[g.addon.name,g.items.map(i=>[i.idx,i.name,i.description])])]);
+  if(box.dataset.sig===ssig) return;     // nothing changed: keep the DOM (and any running entrance animation) as it is
+  box.dataset.sig=ssig; box.innerHTML="";
   if(needEp){ box.appendChild(el("div",HINT,"Pick an episode to see streams.")); return; }
-  if(!d.groups.length){ box.appendChild(el("div",HINT,d.loading?"Loading streams...":"No streams found.")); return; }
+  if(!d.groups.length){ if(d.loading) box.appendChild(skelRows(4)); else box.appendChild(el("div",HINT,"No streams found.")); return; }
   d.groups.forEach(g=>{
     const gh=el("div","t-foot mt-3.5 mb-1.5 flex items-center gap-2 text-subtext0");
     if(g.addon.logo){ const im=el("img","h-5 rounded"); im.alt=""; im.src=img(g.addon.logo,64); gh.appendChild(im); }
@@ -361,7 +454,8 @@ function renderDetail(){
       list.appendChild(b); });
     box.appendChild(list);
   });
-  if(d.loading) box.appendChild(el("div",HINT,"Loading more streams..."));
+  const sk=d.id+":"+d.selected; if(S.streamsKey!==sk){ S.streamsKey=sk; UI.play(box,"stagger"); }
+  if(d.loading) box.appendChild(dotsRow());
 }
 
 function connect(){
@@ -370,10 +464,12 @@ function connect(){
     if(m.k==="snapshot"){ S.props=m.props||{}; S.now=m.now||null; S.bridge=!!m.bridge; S.home=m.home||null; S.route=m.route||""; S.detail=m.detail||null; S.rev=m.rev||0; renderHome(); renderDetail(); }
     else if(m.k==="detail"){ S.detail=m.detail; S.rev=m.rev; renderDetail(); }
     else if(m.k==="home"){ S.home=m.home; renderHome(); }
-    else if(m.k==="route"){ const was=S.route; S.route=m.hash; if(!onDetailRoute()) S.detail=null; if(m.hash==="#/player"&&was!=="#/player"){ if(cfg.autoPlaying) tab("play"); } else if(was!=="#/player"&&m.hash!=="#/player") tab("home"); renderDetail(); }
+    else if(m.k==="route"){ const was=S.route; S.route=m.hash; if(!onDetailRoute()) S.detail=null; if(m.hash==="#/player"&&was!=="#/player"){ if(cfg.autoPlaying) tab("play"); } else if(m.hash!=="#/player"&&(was!=="#/player"||/^#\/detail\//.test(m.hash))) tab("home"); renderDetail(); }
     else if(m.k==="prop") S.props[m.name]=m.data;
     else if(m.k==="now") S.now=m.now;
-    else if(m.k==="bridge"){ S.bridge=m.up; if(!m.up){ S.props={}; S.now=null; S.home=null; S.detail=null; renderHome(); renderDetail(); } }
+    else if(m.k==="bridge"){ S.bridge=m.up; if(!m.up){ S.props={}; S.now=null; S.home=null; S.homeIn=false; S.detail=null; renderHome(); renderDetail(); } }
+    else if(m.k==="url"){ if(m.rid&&m.rid===urlRid){ urlRid=null; pactBusy("url",false); showUrl(String(m.text||"")); } }
+    else if(m.k==="result"){ pactBusy(m.action,false); UI.toast(m.msg||(m.ok?"Done":"That did not work"),m.ok?"success":"error"); }
     else if(m.k==="blocked") UI.toast("Stremio blocked that action ("+(m.what||"command")+")","error");
     render(); };
   ws.onopen=render;
@@ -400,8 +496,48 @@ $("vol").addEventListener("input",()=>{ send({cmd:"volume",v:Number($("vol").val
 $("speed").onchange=()=>send({cmd:"speed",v:Number($("speed").value)});
 $("aid").onchange=()=>send({cmd:"aid",id:$("aid").value});
 $("sid").onchange=()=>send({cmd:"sid",id:$("sid").value});
-function tab(t){ S.tab=t; renderDetail(); if(t==="fx") renderFx(); for(const x of ["home","play","fx","nav"]){ $("tab-"+x).hidden=t!==x; $("n-"+x).setAttribute("aria-selected",t===x); } }
+function tab(t){ const prev=S.tab; S.tab=t; renderDetail(); if(t==="fx") renderFx(); for(const x of ["home","play","fx","nav"]){ $("tab-"+x).hidden=t!==x; $("n-"+x).setAttribute("aria-selected",t===x); } if(prev!==t) UI.play($("tab-"+t),"fade",".25s"); }
 $("n-home").onclick=()=>{ if(S.tab==="home"&&onDetailRoute()) send({cmd:"hash",h:"#/"}); tab("home"); }; $("n-play").onclick=()=>tab("play"); $("n-fx").onclick=()=>tab("fx"); $("n-nav").onclick=()=>tab("nav");
+/* Episodes: opening the show page leaves the player, so say so first (kit alert dialog). */
+$("epsBtn").onclick=()=>{
+  const n=S.now; if(!(n&&n.type==="series"&&n.id)) return;
+  const ep=n.season!=null&&n.episode!=null?"S"+n.season+" E"+n.episode:"This episode";
+  $("epsTitle").textContent="Leave \u201c"+(n.name||"this show")+"\u201d?";
+  $("epsText").textContent=ep+" will stop. Home opens on the show so you can pick an episode and a stream. Continue Watching brings you back here.";
+  $("d-eps").showModal();
+};
+$("epsGo").onclick=()=>{
+  const n=S.now; if(!(n&&n.type==="series"&&n.id)) return;
+  send({cmd:"open",ref:"detail:"+encodeURIComponent(n.type)+"/"+encodeURIComponent(n.id)});
+  UI.toast("Opening the show page...","info");
+};
+/* ---- More actions (the player's menu): everything happens on the PC; the stream link never reaches the phone unless you ask ---- */
+/* A More action shows a spinner until its answer arrives (or 8 s pass), so it can never spin forever. */
+const pactTimers={};
+function pactBusy(action,on){
+  const b=document.querySelector('[data-pact="'+action+'"]'); if(!b) return;
+  const sp=b.querySelector("[data-pspin]"); if(sp) sp.hidden=!on;
+  b.setAttribute("aria-busy",on); clearTimeout(pactTimers[action]);
+  if(on) pactTimers[action]=setTimeout(()=>pactBusy(action,false),8000);
+}
+let urlRid=null;
+const newRid=()=>Array.from(crypto.getRandomValues(new Uint8Array(16)),(b)=>b.toString(16).padStart(2,"0")).join("");
+document.addEventListener("click",(e)=>{
+  const b=e.target.closest("[data-pact]"); if(!b) return;
+  pactBusy(b.dataset.pact,true);
+  if(b.dataset.pact==="url"){ urlRid=newRid(); send({cmd:"more",action:"url",rid:urlRid}); return; }
+  send({cmd:"more",action:b.dataset.pact});
+});
+/* The link arrives only for our own request id, shows in a sheet, and is wiped from the page when the sheet closes. */
+function showUrl(text){ $("urlText").value=text; $("d-url").showModal(); }
+$("d-url").addEventListener("close",()=>{ $("urlText").value=""; });
+async function copyField(ta){
+  const t=ta.value; if(!t) return false;
+  try{ if(navigator.clipboard&&window.isSecureContext){ await Promise.race([navigator.clipboard.writeText(t),new Promise((_,no)=>setTimeout(no,1200))]); return true; } }catch(e){}   // a permission prompt must never hang the button
+  ta.focus(); ta.select(); ta.setSelectionRange(0,t.length);       // plain http: fall back to the old selection copy
+  try{ return document.execCommand("copy"); }catch(e){ return false; }
+}
+$("urlCopy").onclick=async()=>{ const ok=await copyField($("urlText")); UI.toast(ok?"Copied to this phone":"Select the text and copy it manually",ok?"success":"info"); };
 function opened(ref){ send({cmd:"open",ref}); UI.toast("Opening on the TV...","info"); }
 $("dBack").onclick=()=>send({cmd:"back"});
 $("dDesc").onclick=()=>$("dDesc").classList.toggle("is-on");
@@ -602,16 +738,17 @@ async function applyPreset(id){
   const keys=planPreset(curFx(),d);
   if(!keys.length){ UI.toast(d.title+" is already active","info"); return; }
   fxBusy=true; renderPresets();
+  const spin=document.querySelector('[data-preset="'+id+'"] [data-pspin]'); if(spin) spin.hidden=false;
   for(const k of keys){ send({cmd:"hotkey",key:k}); await sleep(250); }   // spaced out: shader and SVP changes are heavy
   await sleep(300);
-  fxBusy=false; renderPresets();
+  fxBusy=false; if(spin) spin.hidden=true; renderPresets();
   UI.toast(d.title+" applied","success");
 }
 function buildPresets(){
   const box=$("fxPresets");
   PRESET_DEFS.forEach((d)=>{
     const b=el("button","card card-tap relative flex flex-col items-start gap-2 !p-3 text-left disabled:pointer-events-none disabled:opacity-40"); b.dataset.preset=d.id;
-    b.innerHTML=`<div class="row-tile ${d.tile}">${ico(d.icon,"size-4")}</div><div><div class="t-sub font-semibold" data-pt>${d.title}</div><div class="t-cap text-subtext0">${d.sub}</div></div><span data-pchk class="invisible absolute top-3 right-3 text-accent">${ico("check","size-5")}</span>`;
+    b.innerHTML=`<div class="row-tile ${d.tile}">${ico(d.icon,"size-4")}</div><div><div class="t-sub font-semibold" data-pt>${d.title}</div><div class="t-cap text-subtext0">${d.sub}</div></div><span data-pchk class="invisible absolute top-3 right-3 text-accent">${ico("check","size-5")}</span><span data-pspin hidden class="spin-ring absolute top-3 right-3 !size-5"></span>`;
     box.appendChild(b);
   });
 }
