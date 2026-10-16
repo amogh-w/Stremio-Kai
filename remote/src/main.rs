@@ -1,12 +1,13 @@
 //! Kai Remote daemon: relays between the bridge webmod (loopback) and phone clients (LAN, token).
 mod auth;
+mod img;
 mod protocol;
 mod relay;
 
 use axum::{
-    extract::{ws::WebSocketUpgrade, State},
+    extract::{ws::WebSocketUpgrade, Query, State},
     middleware,
-    response::{Html, IntoResponse},
+    response::{Html, IntoResponse, Response},
     routing::get,
     Router,
 };
@@ -27,6 +28,10 @@ async fn phone_ws(State(app): State<Arc<relay::App>>, ws: WebSocketUpgrade) -> i
     ws.on_upgrade(move |s| relay::phone(app, s))
 }
 
+async fn img_route(State(app): State<Arc<relay::App>>, Query(q): Query<img::ImgQuery>) -> Response {
+    app.img.serve(q).await
+}
+
 fn print_pairing(token: &str) {
     let ip = local_ip_address::local_ip().map(|i| i.to_string()).unwrap_or_else(|_| "127.0.0.1".into());
     let url = format!("http://{ip}:{PORT}/?t={token}");
@@ -44,6 +49,7 @@ async fn main() {
     let router = Router::new()
         .route("/", get(index))
         .route("/bridge", get(bridge_ws))
+        .route("/img", get(img_route))
         .route("/ws/phone", get(phone_ws))
         .layer(middleware::from_fn_with_state(app.clone(), auth::guard))
         .with_state(app);

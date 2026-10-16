@@ -31,6 +31,22 @@ label{display:block;color:var(--dim);font-size:12px;margin:10px 0 4px}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px 16px calc(8px + env(safe-area-inset-bottom));background:var(--bg)}
 nav button{flex:1}nav button.on{background:var(--accent);color:#11111b}
 .hide{display:none}.toast{position:fixed;left:16px;right:16px;top:12px;background:var(--bad);color:#11111b;border-radius:12px;padding:10px 14px;display:none}
+.hero{position:relative;border-radius:18px;overflow:hidden;margin:12px 0;aspect-ratio:16/10;background:var(--card);touch-action:pan-y}
+.hero .bg{position:absolute;inset:0;background:center/cover;transition:opacity .5s}
+.hero .shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(17,17,27,.95) 0%,rgba(17,17,27,.25) 60%,transparent)}
+.hero .txt{position:absolute;left:14px;right:14px;bottom:12px}
+.hero img.hl{max-height:54px;max-width:65%;margin-bottom:6px;display:block}
+.hero h2{margin:0 0 2px;font-size:20px}.hero .meta{color:var(--dim);font-size:13px}
+.hero p{margin:6px 0 0;font-size:13px;color:#bac2de;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.dots{display:flex;gap:5px;justify-content:center;margin:-4px 0 4px}.dots i{width:6px;height:6px;border-radius:50%;background:var(--card2)}.dots i.on{background:var(--accent)}
+.sec{margin:18px -16px 0}.sec h3{margin:0 16px 8px;font-size:15px;color:var(--dim);font-weight:600}
+.strip{display:flex;gap:10px;overflow-x:auto;padding:0 16px;scroll-snap-type:x proximity;scrollbar-width:none}.strip::-webkit-scrollbar{display:none}
+.tile{flex:0 0 auto;width:112px;scroll-snap-align:start;background:none;padding:0;min-height:0;text-align:left;border-radius:10px;position:relative}
+.tile img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:10px;background:var(--card2);display:block}
+.tile .nm{font-size:12px;margin-top:4px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .lb{font-size:11px;color:var(--dim);min-height:15px}
+.tile .bar{position:absolute;left:6px;right:6px;top:calc(112px * 1.5 - 12px);height:4px;border-radius:2px;background:rgba(0,0,0,.55)}
+.tile .bar i{display:block;height:100%;border-radius:2px;background:var(--accent)}
 #off{text-align:center;color:var(--dim);padding:28px 8px}
 </style>
 </head>
@@ -39,7 +55,14 @@ nav button{flex:1}nav button.on{background:var(--accent);color:#11111b}
 <div class="toast" id="toast"></div>
 <header><span class="dot" id="dot"></span><span id="status">Connecting...</span></header>
 
-<section id="tab-play">
+<section id="tab-home">
+  <div id="homeEmpty" class="card hide" style="text-align:center;color:var(--dim)">Waiting for the home data from Stremio...</div>
+  <div id="hero" class="hero hide"><div class="bg" id="heroBg"></div><div class="shade"></div><div class="txt"><img id="heroLogo" class="hl" alt="" hidden><h2 id="heroTitle"></h2><div class="meta" id="heroMeta"></div><p id="heroPlot"></p></div></div>
+  <div class="dots" id="heroDots"></div>
+  <div id="homeRows"></div>
+</section>
+
+<section id="tab-play" class="hide">
   <div id="off" class="card hide">Stremio is not connected, or nothing is playing.<br>Use the Navigate tab to open something.</div>
   <div id="player" class="hide">
     <div class="card">
@@ -76,12 +99,13 @@ nav button{flex:1}nav button.on{background:var(--accent);color:#11111b}
   </div>
 </section>
 
-<nav><button id="n-play" class="on">Playing</button><button id="n-nav">Navigate</button></nav>
+<nav><button id="n-home" class="on">Home</button><button id="n-play">Playing</button><button id="n-nav">Navigate</button></nav>
 
 <script>
 "use strict";
 const $=(id)=>document.getElementById(id);
-const S={props:{},now:null,bridge:false,ws:null,dragging:false};
+const S={props:{},now:null,home:null,route:"",bridge:false,ws:null,dragging:false,tab:"home",hero:0};
+const img=(u,w)=>u?`/img?w=${w}&u=${encodeURIComponent(u)}`:"";
 const send=(o)=>{ if(S.ws&&S.ws.readyState===1) S.ws.send(JSON.stringify(o)); if(navigator.vibrate) navigator.vibrate(8); };
 
 const fmt=(s)=>{ s=Math.max(0,Math.floor(s||0)); const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
@@ -122,13 +146,46 @@ function render(){
   $("next").hidden=!(n&&n.next);
 }
 
+function tile(it,opts){
+  const b=document.createElement("button"); b.className="tile"; b.dataset.ref=it.ref;
+  const im=document.createElement("img"); im.loading="lazy"; im.alt=""; im.src=img(it.poster,240); b.appendChild(im);
+  if(opts&&opts.progress>0){ const bar=document.createElement("div"); bar.className="bar"; const i=document.createElement("i"); i.style.width=opts.progress+"%"; bar.appendChild(i); b.appendChild(bar); }
+  const nm=document.createElement("div"); nm.className="nm"; nm.textContent=it.name||""; b.appendChild(nm);
+  const lb=document.createElement("div"); lb.className="lb"; lb.textContent=(opts&&opts.label)||it.year||""; b.appendChild(lb);
+  return b;
+}
+function section(title,items,mk){
+  const sec=document.createElement("div"); sec.className="sec"; const h=document.createElement("h3"); h.textContent=title; sec.appendChild(h);
+  const st=document.createElement("div"); st.className="strip"; items.forEach(i=>st.appendChild(mk(i))); sec.appendChild(st); return sec;
+}
+function renderHero(){
+  const hs=(S.home&&S.home.hero)||[]; const el=$("hero"); el.classList.toggle("hide",!hs.length); $("heroDots").innerHTML="";
+  if(!hs.length) return; const h=hs[S.hero%hs.length]; el.dataset.ref=h.ref;
+  $("heroBg").style.backgroundImage=`url("${img(h.background,900)}")`;
+  const lg=$("heroLogo"); if(h.logo){ lg.src=img(h.logo,400); lg.hidden=false; } else lg.hidden=true;
+  $("heroTitle").textContent=h.logo?"":h.title;
+  $("heroMeta").textContent=[h.year,h.runtime,(h.genres||[]).join(", "),h.rating?"\u2605 "+h.rating:""].filter(Boolean).join("  \u00b7  ");
+  $("heroPlot").textContent=h.tagline||h.plot||"";
+  hs.forEach((_,i)=>{ const d=document.createElement("i"); if(i===S.hero%hs.length) d.className="on"; $("heroDots").appendChild(d); });
+}
+function renderHome(){
+  const h=S.home; const has=h&&((h.cw&&h.cw.length)||(h.rows&&h.rows.length)||(h.hero&&h.hero.length));
+  $("homeEmpty").classList.toggle("hide",!!has||!S.bridge); renderHero();
+  const box=$("homeRows"); box.innerHTML=""; if(!h) return;
+  if(h.cw&&h.cw.length) box.appendChild(section("Continue watching",h.cw,(i)=>tile(i,{progress:i.progress,label:i.label})));
+  (h.rows||[]).forEach(r=>{ if(r.items.length) box.appendChild(section(r.name,r.items,(i)=>tile(i))); });
+}
+setInterval(()=>{ const n=(S.home&&S.home.hero||[]).length; if(n>1&&S.tab==="home"&&!document.hidden){ S.hero=(S.hero+1)%n; renderHero(); } },8000);
+
 function connect(){
   const ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws/phone"); S.ws=ws;
   ws.onmessage=(ev)=>{ const m=JSON.parse(ev.data);
-    if(m.k==="snapshot"){ S.props=m.props||{}; S.now=m.now||null; S.bridge=!!m.bridge; }
+    if(m.k==="snapshot"){ S.props=m.props||{}; S.now=m.now||null; S.bridge=!!m.bridge; S.home=m.home||null; S.route=m.route||""; renderHome(); }
+    else if(m.k==="home"){ S.home=m.home; renderHome(); }
+    else if(m.k==="route"){ const was=S.route; S.route=m.hash; if(m.hash==="#/player"&&was!=="#/player") tab("play"); }
     else if(m.k==="prop") S.props[m.name]=m.data;
     else if(m.k==="now") S.now=m.now;
-    else if(m.k==="bridge"){ S.bridge=m.up; if(!m.up){ S.props={}; S.now=null; } }
+    else if(m.k==="bridge"){ S.bridge=m.up; if(!m.up){ S.props={}; S.now=null; S.home=null; renderHome(); } }
     else if(m.k==="blocked") toast("Stremio blocked that action ("+(m.what||"command")+")");
     render(); };
   ws.onopen=render;
@@ -153,10 +210,15 @@ $("vol").addEventListener("input",()=>send({cmd:"volume",v:Number($("vol").value
 $("speed").onchange=()=>send({cmd:"speed",v:Number($("speed").value)});
 $("aid").onchange=()=>send({cmd:"aid",id:$("aid").value});
 $("sid").onchange=()=>send({cmd:"sid",id:$("sid").value});
-function tab(t){ $("tab-play").classList.toggle("hide",t!=="play"); $("tab-nav").classList.toggle("hide",t!=="nav");
-  $("n-play").classList.toggle("on",t==="play"); $("n-nav").classList.toggle("on",t==="nav"); }
-$("n-play").onclick=()=>tab("play"); $("n-nav").onclick=()=>tab("nav");
-connect(); render();
+function tab(t){ S.tab=t; for(const x of ["home","play","nav"]){ $("tab-"+x).classList.toggle("hide",t!==x); $("n-"+x).classList.toggle("on",t===x); } }
+$("n-home").onclick=()=>tab("home"); $("n-play").onclick=()=>tab("play"); $("n-nav").onclick=()=>tab("nav");
+function opened(ref){ send({cmd:"open",ref}); const t=$("toast"); t.style.background="var(--accent)"; toast("Opening on the TV..."); setTimeout(()=>t.style.background="",3600); }
+$("hero").onclick=()=>opened($("hero").dataset.ref);
+$("homeRows").addEventListener("click",(e)=>{ const t=e.target.closest(".tile"); if(t) opened(t.dataset.ref); });
+let tx=0; $("hero").addEventListener("touchstart",(e)=>{ tx=e.touches[0].clientX; },{passive:true});
+$("hero").addEventListener("touchend",(e)=>{ const dx=e.changedTouches[0].clientX-tx; const n=(S.home&&S.home.hero||[]).length;
+  if(Math.abs(dx)>50&&n>1){ S.hero=(S.hero+(dx<0?1:-1)+n)%n; renderHero(); } });
+connect(); render(); renderHome();
 </script>
 </body>
 </html>

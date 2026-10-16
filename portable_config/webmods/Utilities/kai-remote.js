@@ -103,18 +103,93 @@
         up({ k: "now", now: R.now });
       } catch (e) {}
     };
+    // ---- home (continue watching, catalog rows, hero) ------------------------------------------
+    // Items carry only ids. Routes, and above all stream deep links (which embed debrid tokens),
+    // are resolved here at command time and never leave the PC.
+    const cap = (v, n) => (typeof v === "string" ? v.slice(0, n) : null);
+    const enc = encodeURIComponent;
+    const epLabel = (it) => {
+      const p = String((it.state && it.state.videoId) || "").split(":");
+      return p.length >= 3 && it.type === "series" ? "S" + p[p.length - 2] + " E" + p[p.length - 1] : null;
+    };
+    const buildHome = async () => {
+      const t = window.services.core.transport;
+      const [cw, board] = await Promise.all([t.getState("continue_watching_preview"), t.getState("board")]);
+      const home = { hero: [], cw: [], rows: [] };
+      for (const it of ((cw && cw.items) || []).slice(0, 20)) {
+        home.cw.push({
+          ref: "resume:" + enc(it._id), more: "streams:" + enc(it._id), id: it._id, type: it.type, name: cap(it.name, 120),
+          poster: it.poster || null, label: epLabel(it), progress: Math.max(0, Math.min(100, Number(it.progress) || 0)),
+        });
+      }
+      for (const cat of ((board && board.catalogs) || []).slice(0, 12)) {
+        const c = cat.content;
+        if (!c || c.type !== "Ready" || !Array.isArray(c.content)) continue;
+        home.rows.push({
+          name: cap(cat.name, 60) + " - " + cap(cat.type, 20), type: cat.type,
+          items: c.content.slice(0, 30).map((m) => ({
+            ref: "detail:" + enc(m.type) + "/" + enc(m.id), name: cap(m.name, 120), poster: m.poster || null,
+            shape: m.posterShape || "poster", year: cap(m.releaseInfo, 12),
+          })),
+        });
+      }
+      const H = window.HeroPlugin && window.HeroPlugin.State;
+      for (const h of ((H && H.heroTitles) || []).slice(0, 12)) {
+        if (!h || !h.imdb || !h.background) continue;
+        home.hero.push({
+          ref: "detail:" + enc(h.type || "movie") + "/" + enc(h.imdb), title: cap(h.title, 120), tagline: cap(h.tagline, 160),
+          year: cap(h.year, 8), runtime: cap(h.runtime, 20), genres: (h.genres || []).slice(0, 3),
+          rating: h.ratings && h.ratings.imdb ? h.ratings.imdb.score : null, plot: cap(h.plot, 320),
+          background: h.background, logo: h.logo || null,
+        });
+      }
+      return home;
+    };
+    let homeSig = "";
+    const refreshHome = async (force) => {
+      try {
+        const home = await buildHome();
+        const sig = JSON.stringify(home);
+        if (sig === homeSig && !force) return;
+        homeSig = sig;
+        up({ k: "home", home });
+      } catch (e) {}
+    };
+    // Resolve a phone ref to a route using fresh core state.
+    const openRef = async (ref) => {
+      try {
+        const [kind, rest] = [ref.slice(0, ref.indexOf(":")), ref.slice(ref.indexOf(":") + 1)];
+        if (kind === "detail") {
+          const [type, id] = rest.split("/");
+          if (type && id) location.hash = "#/detail/" + type + "/" + id;
+          return;
+        }
+        const cw = await window.services.core.transport.getState("continue_watching_preview");
+        const it = ((cw && cw.items) || []).find((x) => x._id === decodeURIComponent(rest));
+        if (!it || !it.deepLinks) return;
+        const link = kind === "resume" ? it.deepLinks.player || it.deepLinks.metaDetailsStreams : it.deepLinks.metaDetailsStreams || it.deepLinks.metaDetailsVideos;
+        if (typeof link === "string" && link.startsWith("#/")) location.hash = link;
+      } catch (e) {}
+    };
+
     const attachCore = () => {
       try {
         const core = window.services && window.services.core;
         if (!core) return setTimeout(attachCore, 1000);
-        core.transport.on("NewState", (models) => { if (Array.isArray(models) && models.includes("player")) refreshNow(); });
+        core.transport.on("NewState", (models) => {
+          if (!Array.isArray(models)) return;
+          if (models.includes("player")) refreshNow();
+          if (models.includes("continue_watching_preview") || models.includes("board")) refreshHome();
+        });
         refreshNow();
+        refreshHome();
+        setInterval(() => refreshHome(), 20000); // hero list is filled asynchronously by Kai
       } catch (e) { setTimeout(attachCore, 2000); }
     };
     setTimeout(attachCore, 1500);
 
     // ---- route ---------------------------------------------------------------------------------
-    const sendRoute = () => up({ k: "route", hash: location.hash || "#/" });
+    const sendRoute = () => up({ k: "route", hash: /^#\/player/.test(location.hash) ? "#/player" : location.hash || "#/" });
     window.addEventListener("hashchange", sendRoute);
 
     // ---- daemon -> page: commands --------------------------------------------------------------
@@ -137,6 +212,7 @@
         }
         case "back": return history.back();
         case "key": return pressKey(m.key);
+        case "open": return openRef(String(m.ref));
         case "hash": if (typeof m.h === "string" && /^#\/[\w#/?=&:%.~-]*$/.test(m.h)) location.hash = m.h; return;
       }
     };
@@ -152,6 +228,7 @@
           up({ k: "now", now: R.now });
           sendRoute();
           refreshNow();
+          refreshHome(true);
         };
         ws.onmessage = (ev) => { try { run(JSON.parse(ev.data)); } catch (e) {} };
         ws.onclose = () => setTimeout(connect, 2000);

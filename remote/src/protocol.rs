@@ -19,6 +19,11 @@ pub enum Cmd {
     Back,
     Key { key: Key },
     Hash { h: String },
+    /// `detail:<type>/<id>`, `resume:<id>` or `streams:<id>`; the bridge turns it into a route.
+    Open {
+        #[serde(rename = "ref")]
+        target: String,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -39,6 +44,11 @@ fn hash_ok(h: &str) -> bool {
     h.starts_with("#/") && h.len() <= 400 && h.bytes().all(|b| b.is_ascii_alphanumeric() || b"#/?=&:%._-~".contains(&b))
 }
 
+fn ref_ok(r: &str) -> bool {
+    let known = ["detail:", "resume:", "streams:"].iter().any(|p| r.starts_with(p));
+    known && r.len() <= 120 && r.bytes().all(|b| b.is_ascii_alphanumeric() || b":/._%-".contains(&b))
+}
+
 impl Cmd {
     /// Returns a sanitized command, or None when the values are out of range.
     pub fn validate(self) -> Option<Cmd> {
@@ -49,6 +59,7 @@ impl Cmd {
             Cmd::Subdelay { s } if s.is_finite() && s.abs() <= 60.0 => Some(self),
             Cmd::Aid { ref id } | Cmd::Sid { ref id } if track_id_ok(id) => Some(self),
             Cmd::Hash { ref h } if hash_ok(h) => Some(self),
+            Cmd::Open { ref target } if ref_ok(target) => Some(self),
             Cmd::Pause { .. } | Cmd::Mute { .. } | Cmd::Skip | Cmd::Next | Cmd::Ok | Cmd::Back | Cmd::Key { .. } => Some(self),
             _ => None,
         }

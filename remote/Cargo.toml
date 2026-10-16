@@ -11,3 +11,6 @@ serde_json = "1"
 rand = "0.9"
 qrcode = { version = "0.14", default-features = false }
 local-ip-address = "0.6"
+reqwest = { version = "0.12", default-features = false, features = ["default-tls"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+sha2 = "0.10"

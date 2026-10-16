@@ -13,11 +13,13 @@ struct Snapshot {
     props: Map<String, Value>,
     now: Value,
     route: String,
+    home: Value,
 }
 
 pub struct App {
     pub token: String,
     snap: Mutex<Snapshot>,
+    pub img: crate::img::Img,
     bridges: AtomicUsize,
     to_phones: broadcast::Sender<String>,
     to_bridge: broadcast::Sender<String>,
@@ -28,6 +30,7 @@ impl App {
         Self {
             token,
             snap: Mutex::default(),
+            img: crate::img::Img::new(),
             bridges: AtomicUsize::new(0),
             to_phones: broadcast::channel(256).0,
             to_bridge: broadcast::channel(64).0,
@@ -40,7 +43,7 @@ impl App {
 
     fn snapshot_msg(&self) -> String {
         let s = self.snap.lock().unwrap();
-        json!({ "k": "snapshot", "bridge": self.bridge_up(), "props": s.props, "now": s.now, "route": s.route }).to_string()
+        json!({ "k": "snapshot", "bridge": self.bridge_up(), "props": s.props, "now": s.now, "route": s.route, "home": s.home }).to_string()
     }
 
     fn announce_bridge(&self) {
@@ -71,6 +74,7 @@ pub async fn bridge(app: Arc<App>, mut ws: WebSocket) {
         let mut s = app.snap.lock().unwrap();
         s.props.clear();
         s.now = Value::Null;
+        s.home = Value::Null;
         s.route.clear();
     }
     app.announce_bridge();
@@ -89,6 +93,7 @@ fn ingest(app: &App, text: &str) {
                 }
             }
             Some("now") => s.now = v.get("now").cloned().unwrap_or(Value::Null),
+            Some("home") => s.home = v.get("home").cloned().unwrap_or(Value::Null),
             Some("route") => s.route = v.get("hash").and_then(Value::as_str).unwrap_or("").to_string(),
             Some("blocked") => {}
             _ => return,
