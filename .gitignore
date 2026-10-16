@@ -6,3 +6,4 @@ spike-capture.jsonl
 # Runtime cache
 portable_config/cache/
 portable_config/scripts/smart-track-selector/track_preferences.json
+remote/web/node_modules/

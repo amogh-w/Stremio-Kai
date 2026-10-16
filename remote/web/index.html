@@ -1,148 +1,167 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="mocha">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#11111b">
 <title>Kai Remote</title>
-<style>
-:root{--bg:#11111b;--card:#1e1e2e;--card2:#313244;--text:#cdd6f4;--dim:#9399b2;--accent:#cba6f7;--ok:#a6e3a1;--bad:#f38ba8}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,sans-serif;overscroll-behavior:none}
-body{min-height:100dvh;padding:0 16px calc(76px + env(safe-area-inset-bottom))}
-#backdrop{position:fixed;inset:0;z-index:-1;background:center/cover;filter:blur(28px) brightness(.35);transform:scale(1.15);transition:opacity .4s;opacity:0}
-header{display:flex;align-items:center;gap:8px;padding:14px 0 6px;color:var(--dim);font-size:13px}
-.dot{width:9px;height:9px;border-radius:50%;background:var(--bad)}.dot.on{background:var(--ok)}
-.card{background:color-mix(in srgb,var(--card) 88%,transparent);border-radius:16px;padding:14px;margin:12px 0}
-h1{font-size:19px;margin:0 0 2px}.sub{color:var(--dim);font-size:14px}
-.art{display:flex;gap:12px;align-items:center}.art img{height:84px;border-radius:8px;background:var(--card2)}
-.logo{max-height:48px;max-width:70%;margin-bottom:6px}
-button{font:inherit;color:var(--text);background:var(--card2);border:0;border-radius:12px;min-height:48px;padding:0 14px}
-button:active{background:var(--accent);color:#11111b}
-.row{display:flex;gap:8px;margin:8px 0}.row>*{flex:1}
-.play{font-size:26px;min-height:64px;background:var(--accent);color:#11111b}
-input[type=range]{width:100%;accent-color:var(--accent);height:32px}
-.times{display:flex;justify-content:space-between;color:var(--dim);font-size:13px;font-variant-numeric:tabular-nums}
-select{width:100%;font:inherit;color:var(--text);background:var(--card2);border:0;border-radius:12px;min-height:46px;padding:0 10px}
-label{display:block;color:var(--dim);font-size:12px;margin:10px 0 4px}
-.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;margin:12px auto}
-.pad button{min-height:72px;font-size:24px}
-.pages{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-nav{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px 16px calc(8px + env(safe-area-inset-bottom));background:var(--bg)}
-nav button{flex:1}nav button.on{background:var(--accent);color:#11111b}
-.hide{display:none}.toast{position:fixed;left:16px;right:16px;top:12px;background:var(--bad);color:#11111b;border-radius:12px;padding:10px 14px;display:none}
-.hero{position:relative;border-radius:18px;overflow:hidden;margin:12px 0;aspect-ratio:16/10;background:var(--card);touch-action:pan-y}
-.hero .bg{position:absolute;inset:0;background:center/cover;transition:opacity .5s}
-.hero .shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(17,17,27,.95) 0%,rgba(17,17,27,.25) 60%,transparent)}
-.hero .txt{position:absolute;left:14px;right:14px;bottom:12px}
-.hero img.hl{max-height:54px;max-width:65%;margin-bottom:6px;display:block}
-.hero h2{margin:0 0 2px;font-size:20px}.hero .meta{color:var(--dim);font-size:13px}
-.hero p{margin:6px 0 0;font-size:13px;color:#bac2de;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.dots{display:flex;gap:5px;justify-content:center;margin:-4px 0 4px}.dots i{width:6px;height:6px;border-radius:50%;background:var(--card2)}.dots i.on{background:var(--accent)}
-.sec{margin:18px -16px 0}.sec h3{margin:0 16px 8px;font-size:15px;color:var(--dim);font-weight:600}
-.strip{display:flex;gap:10px;overflow-x:auto;padding:0 16px;scroll-snap-type:x proximity;scrollbar-width:none}.strip::-webkit-scrollbar{display:none}
-.tile{flex:0 0 auto;width:112px;scroll-snap-align:start;background:none;padding:0;min-height:0;text-align:left;border-radius:10px;position:relative}
-.tile img{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:10px;background:var(--card2);display:block}
-.tile .nm{font-size:12px;margin-top:4px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tile .lb{font-size:11px;color:var(--dim);min-height:15px}
-.tile .bar{position:absolute;left:6px;right:6px;top:calc(112px * 1.5 - 12px);height:4px;border-radius:2px;background:rgba(0,0,0,.55)}
-.tile .bar i{display:block;height:100%;border-radius:2px;background:var(--accent)}
-.dhead{display:flex;align-items:center;padding:10px 0 4px}
-.dhero{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:16/10;background:var(--card);margin-top:6px}
-.dhero .bg{position:absolute;inset:0;background:center/cover}
-.dhero .shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(17,17,27,.95) 0%,rgba(17,17,27,.2) 65%,transparent)}
-.dhero .txt{position:absolute;left:14px;right:14px;bottom:12px}
-.dhero img.hl{max-height:56px;max-width:68%;display:block;margin-bottom:6px}
-.dhero h2{margin:0;font-size:21px}.dhero .meta{color:var(--dim);font-size:13px;margin-top:2px}
-.desc{color:#bac2de;font-size:14px;margin:12px 0;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.desc.open{-webkit-line-clamp:unset}
-.seasons{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}.seasons::-webkit-scrollbar{display:none}
-.seasons button{flex:0 0 auto;min-height:38px;padding:0 14px;border-radius:19px}.seasons button.on{background:var(--accent);color:#11111b}
-.ep{display:flex;gap:10px;align-items:center;width:100%;text-align:left;padding:8px;margin:6px 0;min-height:0;background:color-mix(in srgb,var(--card) 88%,transparent)}
-.ep.sel{outline:2px solid var(--accent)}
-.ep img{width:96px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;background:var(--card2);flex:0 0 auto}
-.ep .t{font-size:14px}.ep .s{font-size:12px;color:var(--dim)}
-.grp{margin:14px 0 4px;color:var(--dim);font-size:13px;display:flex;align-items:center;gap:8px}.grp img{height:20px;border-radius:4px}
-.st{display:block;width:100%;text-align:left;margin:6px 0;padding:10px 12px;min-height:0;background:color-mix(in srgb,var(--card) 88%,transparent)}
-.st .n{font-weight:600;font-size:14px;white-space:pre-line}.st .d{font-size:12px;color:var(--dim);white-space:pre-line;margin-top:2px}
-.hint{color:var(--dim);text-align:center;padding:18px 8px;font-size:14px}
-#off{text-align:center;color:var(--dim);padding:28px 8px}
-</style>
+<link rel="stylesheet" href="/app.css">
+<script src="/theme.js"></script>
 </head>
-<body>
-<div id="backdrop"></div>
-<div class="toast" id="toast"></div>
-<header><span class="dot" id="dot"></span><span id="status">Connecting...</span></header>
+<body class="mx-auto min-h-dvh max-w-[480px] px-4 pb-28">
+<div id="backdrop" class="fixed inset-0 -z-10 scale-125 bg-cover bg-center opacity-0 blur-2xl transition-opacity duration-500"></div>
+
+<header class="flex items-center gap-2 pt-3.5 pb-1.5 text-[13px] text-subtext0">
+  <span id="dot" class="size-2.5 rounded-full bg-red [&.is-on]:bg-green"></span>
+  <span id="status">Connecting...</span>
+  <button id="themeBtn" aria-label="Theme" class="btn btn-gray btn-icon ml-auto"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#palette"/></svg></button>
+</header>
+
+<div id="themePanel" hidden class="card my-3">
+  <div class="t-foot mb-2 text-subtext0">Flavor</div>
+  <div class="flex flex-wrap gap-2">
+    <button class="chip" data-flavor="auto">Auto</button><button class="chip" data-flavor="latte">Latte</button><button class="chip" data-flavor="frappe">Frapp&eacute;</button><button class="chip" data-flavor="macchiato">Macchiato</button><button class="chip" data-flavor="mocha">Mocha</button>
+  </div>
+  <div class="t-foot mt-4 mb-2 text-subtext0">Corner radius</div>
+  <div class="flex gap-2"><button class="chip" data-radius="tight">Tight</button><button class="chip" data-radius="apple">Apple</button><button class="chip" data-radius="soft">Soft</button></div>
+  <div class="t-foot mt-4 mb-2 text-subtext0">Accent</div>
+  <div class="flex flex-wrap gap-2.5">
+    <button aria-label="Rosewater" data-accent="rosewater" class="size-8 rounded-full bg-rosewater ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Flamingo" data-accent="flamingo" class="size-8 rounded-full bg-flamingo ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Pink" data-accent="pink" class="size-8 rounded-full bg-pink ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Mauve" data-accent="mauve" class="size-8 rounded-full bg-mauve ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Red" data-accent="red" class="size-8 rounded-full bg-red ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Peach" data-accent="peach" class="size-8 rounded-full bg-peach ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Yellow" data-accent="yellow" class="size-8 rounded-full bg-yellow ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Green" data-accent="green" class="size-8 rounded-full bg-green ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Teal" data-accent="teal" class="size-8 rounded-full bg-teal ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Sky" data-accent="sky" class="size-8 rounded-full bg-sky ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Blue" data-accent="blue" class="size-8 rounded-full bg-blue ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Lavender" data-accent="lavender" class="size-8 rounded-full bg-lavender ring-text ring-offset-2 ring-offset-base"></button>
+  </div>
+</div>
 
 <section id="tab-home">
-  <div id="homeMain"><div id="homeEmpty" class="card hide" style="text-align:center;color:var(--dim)">Waiting for the home data from Stremio...</div>
-  <div id="hero" class="hero hide"><div class="bg" id="heroBg"></div><div class="shade"></div><div class="txt"><img id="heroLogo" class="hl" alt="" hidden><h2 id="heroTitle"></h2><div class="meta" id="heroMeta"></div><p id="heroPlot"></p></div></div>
-  <div class="dots" id="heroDots"></div>
-  <div id="homeRows"></div>
+  <div id="homeMain">
+    <div id="homeEmpty" hidden class="card my-3 text-center text-subtext0">Waiting for the home data from Stremio...</div>
+    <div id="hero" hidden class="relative my-3 aspect-[16/10] touch-pan-y overflow-hidden rounded-card bg-base">
+      <div id="heroBg" class="absolute inset-0 bg-cover bg-center"></div>
+      <div class="absolute inset-0 bg-linear-to-t from-base/95 via-base/25 to-transparent"></div>
+      <div class="absolute inset-x-3.5 bottom-3">
+        <img id="heroLogo" alt="" hidden class="mb-1.5 block max-h-[54px] max-w-[65%]">
+        <h2 id="heroTitle" class="t-title2"></h2>
+        <div id="heroMeta" class="t-foot text-subtext0"></div>
+        <p id="heroPlot" class="t-foot mt-1.5 line-clamp-2 text-subtext1"></p>
+      </div>
+    </div>
+    <div id="heroDots" class="-mt-1 mb-1 flex justify-center gap-1.5"></div>
+    <div id="homeRows"></div>
   </div>
-  <div id="detail" class="hide">
-    <div class="dhead"><button id="dBack">&#8249; Back</button></div>
-    <div id="dLoading" class="hint hide">Loading...</div>
-    <div id="dBody" class="hide">
-      <div class="dhero"><div class="bg" id="dBg"></div><div class="shade"></div><div class="txt"><img id="dLogo" class="hl" alt="" hidden><h2 id="dTitle"></h2><div class="meta" id="dMeta"></div></div></div>
-      <p class="desc" id="dDesc"></p>
+
+  <div id="detail" hidden>
+    <div class="flex items-center pt-2.5 pb-1"><button id="dBack" class="btn btn-plain btn-sm gap-0.5 px-2"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-left"/></svg>Back</button></div>
+    <div id="dLoading" hidden class="t-sub px-2 py-4 text-center text-subtext0">Loading...</div>
+    <div id="dBody" hidden>
+      <div class="relative mt-1.5 aspect-[16/10] overflow-hidden rounded-card bg-base">
+        <div id="dBg" class="absolute inset-0 bg-cover bg-center"></div>
+        <div class="absolute inset-0 bg-linear-to-t from-base/95 via-base/20 to-transparent"></div>
+        <div class="absolute inset-x-3.5 bottom-3">
+          <img id="dLogo" alt="" hidden class="mb-1.5 block max-h-14 max-w-[68%]">
+          <h2 id="dTitle" class="t-title2"></h2>
+          <div id="dMeta" class="t-foot mt-0.5 text-subtext0"></div>
+        </div>
+      </div>
+      <p id="dDesc" class="t-sub my-3 line-clamp-4 text-subtext1 [&.is-on]:line-clamp-none"></p>
       <div id="dEps"></div>
       <div id="dStreams"></div>
     </div>
   </div>
 </section>
 
-<section id="tab-play" class="hide">
-  <div id="off" class="card hide">Stremio is not connected, or nothing is playing.<br>Use the Navigate tab to open something.</div>
-  <div id="player" class="hide">
-    <div class="card">
-      <div class="art"><img id="poster" alt="" hidden><div><img id="logo" class="logo" alt="" hidden><h1 id="title"></h1><div class="sub" id="ep"></div></div></div>
+<section id="tab-play" hidden>
+  <div id="off" hidden class="card my-3 px-2 py-7 text-center text-subtext0">Stremio is not connected, or nothing is playing.<br>Use the Navigate tab to open something.</div>
+  <div id="player" hidden>
+    <div class="card my-3">
+      <div class="flex items-center gap-3">
+        <img id="poster" alt="" hidden class="h-[84px] rounded-lg bg-surface0">
+        <div>
+          <img id="logo" alt="" hidden class="mb-1.5 max-h-12 max-w-[70%]">
+          <h1 id="title" class="t-title3"></h1>
+          <div id="ep" class="t-sub text-subtext0"></div>
+        </div>
+      </div>
     </div>
-    <div class="card">
-      <input type="range" id="seek" min="0" max="1" step="1" value="0">
-      <div class="times"><span id="cur">0:00</span><span id="dur">0:00</span></div>
-      <div class="row"><button data-seek="-30">-30</button><button data-seek="-10">-10</button><button data-seek="10">+10</button><button data-seek="30">+30</button></div>
-      <div class="row"><button class="play" id="pp">&#9654;</button></div>
-      <div class="row"><button id="skip">Skip intro</button><button id="next">Next episode</button></div>
+    <div class="card my-3">
+      <input type="range" id="seek" min="0" max="1" step="1" value="0" class="range">
+      <div class="t-foot flex justify-between tabular-nums text-subtext0"><span id="cur">0:00</span><span id="dur">0:00</span></div>
+      <div class="my-2 flex gap-2">
+        <button class="btn btn-gray flex-1" data-seek="-30"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-ccw"/></svg>30</button>
+        <button class="btn btn-gray flex-1" data-seek="-10"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-ccw"/></svg>10</button>
+        <button class="btn btn-gray flex-1" data-seek="10"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-cw"/></svg>10</button>
+        <button class="btn btn-gray flex-1" data-seek="30"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#rotate-cw"/></svg>30</button>
+      </div>
+      <div class="my-2 flex gap-2"><button id="pp" class="btn btn-filled btn-lg flex-1" aria-label="Play or pause"><svg class="size-8 shrink-0" aria-hidden="true"><use href="/icons.svg#play"/></svg></button></div>
+      <div class="my-2 flex gap-2">
+        <button id="skip" class="btn btn-tinted flex-1"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#fast-forward"/></svg>Skip intro</button>
+        <button id="next" class="btn btn-gray flex-1"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#skip-forward"/></svg>Next episode</button>
+      </div>
     </div>
-    <div class="card">
-      <div class="row" style="align-items:center"><button id="mute" style="flex:0 0 64px">&#128266;</button><input type="range" id="vol" min="0" max="100" step="1"></div>
-      <label>Speed</label><select id="speed"></select>
-      <label>Audio</label><select id="aid"></select>
-      <label>Subtitles</label><select id="sid"></select>
-      <div class="row" style="align-items:center"><button data-delay="-0.1">-0.1s</button><div class="sub" id="delay" style="text-align:center">delay 0.0s</div><button data-delay="0.1">+0.1s</button></div>
+    <div class="card my-3">
+      <div class="my-2 flex items-center gap-2"><button id="mute" class="btn btn-gray w-16 shrink-0" aria-label="Mute"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#volume-2"/></svg></button><input type="range" id="vol" min="0" max="100" step="1" class="range"></div>
+      <label class="t-foot mt-2.5 mb-1 block text-subtext0">Speed</label>
+      <div class="relative"><select id="speed" class="field"></select><svg class="pointer-events-none absolute top-3 right-3 size-5 text-overlay1" aria-hidden="true"><use href="/icons.svg#chevron-down"/></svg></div>
+      <label class="t-foot mt-2.5 mb-1 block text-subtext0">Audio</label>
+      <div class="relative"><select id="aid" class="field"></select><svg class="pointer-events-none absolute top-3 right-3 size-5 text-overlay1" aria-hidden="true"><use href="/icons.svg#chevron-down"/></svg></div>
+      <label class="t-foot mt-2.5 mb-1 block text-subtext0">Subtitles</label>
+      <div class="relative"><select id="sid" class="field"></select><svg class="pointer-events-none absolute top-3 right-3 size-5 text-overlay1" aria-hidden="true"><use href="/icons.svg#chevron-down"/></svg></div>
+      <div class="mt-3 flex items-center gap-2">
+        <button class="btn btn-gray flex-1" data-delay="-0.1"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#minus"/></svg>0.1s</button>
+        <div id="delay" class="t-sub flex-1 text-center text-subtext0">delay 0.0s</div>
+        <button class="btn btn-gray flex-1" data-delay="0.1"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#plus"/></svg>0.1s</button>
+      </div>
     </div>
   </div>
 </section>
 
-<section id="tab-nav" class="hide">
-  <div class="card">
-    <div class="pad">
-      <span></span><button data-key="ArrowUp">&#9650;</button><span></span>
-      <button data-key="ArrowLeft">&#9664;</button><button id="ok">OK</button><button data-key="ArrowRight">&#9654;</button>
-      <button id="back">&#8617;</button><button data-key="ArrowDown">&#9660;</button><button data-key="Escape">Esc</button>
+<section id="tab-nav" hidden>
+  <div class="card my-3">
+    <div class="mx-auto my-3 grid max-w-[280px] grid-cols-3 gap-2.5">
+      <span></span><button class="btn btn-gray h-[72px]" data-key="ArrowUp" aria-label="Up"><svg class="size-8 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-up"/></svg></button><span></span>
+      <button class="btn btn-gray h-[72px]" data-key="ArrowLeft" aria-label="Left"><svg class="size-8 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-left"/></svg></button><button id="ok" class="btn btn-filled h-[72px] text-2xl">OK</button><button class="btn btn-gray h-[72px]" data-key="ArrowRight" aria-label="Right"><svg class="size-8 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-right"/></svg></button>
+      <button id="back" class="btn btn-gray h-[72px]" aria-label="Back"><svg class="size-7 shrink-0" aria-hidden="true"><use href="/icons.svg#undo-2"/></svg></button><button class="btn btn-gray h-[72px]" data-key="ArrowDown" aria-label="Down"><svg class="size-8 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-down"/></svg></button><button class="btn btn-gray h-[72px]" data-key="Escape" aria-label="Escape"><svg class="size-7 shrink-0" aria-hidden="true"><use href="/icons.svg#x"/></svg></button>
     </div>
   </div>
-  <div class="card pages">
-    <button data-hash="#/">Home</button><button data-hash="#/discover">Discover</button><button data-hash="#/library">Library</button>
-    <button data-hash="#/calendar">Calendar</button><button data-hash="#/addons">Add-ons</button><button data-hash="#/settings">Settings</button>
+  <div class="card my-3 grid grid-cols-3 gap-2">
+    <button class="btn btn-gray" data-hash="#/"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#house"/></svg>Home</button>
+    <button class="btn btn-gray" data-hash="#/discover"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#compass"/></svg>Discover</button>
+    <button class="btn btn-gray" data-hash="#/library"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#library"/></svg>Library</button>
+    <button class="btn btn-gray" data-hash="#/calendar"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#calendar"/></svg>Calendar</button>
+    <button class="btn btn-gray" data-hash="#/addons"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#puzzle"/></svg>Add-ons</button>
+    <button class="btn btn-gray" data-hash="#/settings"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#settings"/></svg>Settings</button>
   </div>
 </section>
 
-<nav><button id="n-home" class="on">Home</button><button id="n-play">Playing</button><button id="n-nav">Navigate</button></nav>
+<nav class="tabbar fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[480px] pb-[calc(12px+env(safe-area-inset-bottom))]">
+  <button id="n-home" class="tab" aria-selected="true"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#house"/></svg>Home</button>
+  <button id="n-play" class="tab" aria-selected="false"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#circle-play"/></svg>Playing</button>
+  <button id="n-nav" class="tab" aria-selected="false"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#gamepad-2"/></svg>Navigate</button>
+</nav>
 
+<script src="/ui.js"></script>
 <script>
 "use strict";
 const $=(id)=>document.getElementById(id);
 const S={props:{},now:null,home:null,route:"",bridge:false,ws:null,dragging:false,tab:"home",hero:0,detail:null,rev:0,season:null,lastDetailId:null};
 const img=(u,w)=>u?`/img?w=${w}&u=${encodeURIComponent(u)}`:"";
 const send=(o)=>{ if(S.ws&&S.ws.readyState===1) S.ws.send(JSON.stringify(o)); if(navigator.vibrate) navigator.vibrate(8); };
+const ico=(n,cls)=>`<svg class="${cls||"size-5"} shrink-0" aria-hidden="true"><use href="/icons.svg#${n}"/></svg>`;
+const el=(tag,cls,text)=>{ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; };
+const HINT="t-sub px-2 py-4 text-center text-subtext0";
+const paint=(r)=>r.style.setProperty("--p",((r.value-r.min)/(r.max-r.min||1))*100+"%");
 
 const fmt=(s)=>{ s=Math.max(0,Math.floor(s||0)); const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
   return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0"); };
 const off=(v)=>v===false||v==null||v==="no"||v==="false";
-
-function toast(msg){ const t=$("toast"); t.textContent=msg; t.style.display="block"; clearTimeout(toast.h); toast.h=setTimeout(()=>t.style.display="none",3500); }
 
 function fillSelect(sel, items, current){
   const sig=JSON.stringify(items); if(sel.dataset.sig!==sig){ sel.dataset.sig=sig; sel.innerHTML=""; for(const [v,l] of items){ const o=document.createElement("option"); o.value=v; o.textContent=l; sel.appendChild(o); } }
@@ -152,22 +171,22 @@ const label=(t)=>[t.lang&&t.lang.toUpperCase(),t.title,t.codec].filter(Boolean).
 
 function render(){
   const p=S.props, playing=S.bridge && p.duration!=null;
-  $("dot").classList.toggle("on",S.bridge);
+  $("dot").classList.toggle("is-on",S.bridge);
   $("status").textContent=S.bridge?"Connected to Stremio":(S.ws&&S.ws.readyState===1?"Waiting for Stremio...":"Connecting...");
-  $("off").classList.toggle("hide",playing); $("player").classList.toggle("hide",!playing);
+  $("off").hidden=playing; $("player").hidden=!playing;
   const n=S.now;
   $("title").textContent=n?(n.name||n.title||""):"";
   $("ep").textContent=n&&n.season!=null?`S${n.season} E${n.episode}${n.title&&n.title!==n.name?" - "+n.title.replace(/^.* - /,""):""}`:"";
-  const setImg=(el,src)=>{ if(src){ if(el.src!==src) el.src=src; el.hidden=false; } else el.hidden=true; };
-  setImg($("poster"),n&&n.poster); setImg($("logo"),n&&n.logo);
-  const bg=$("backdrop"); const b=n&&n.background; bg.style.backgroundImage=b?`url("${b}")`:""; bg.style.opacity=b?1:0;
+  const setImg=(e,src)=>{ if(src){ if(e.src!==src) e.src=src; e.hidden=false; } else e.hidden=true; };
+  setImg($("poster"),n&&img(n.poster,240)); setImg($("logo"),n&&img(n.logo,400));
+  const bg=$("backdrop"); const b=n&&n.background; bg.style.backgroundImage=b?`url("${img(b,900)}")`:""; bg.style.opacity=b?0.3:0;
   if(!playing) return;
   const dur=p.duration||0;
-  if(!S.dragging){ $("seek").max=Math.max(1,Math.floor(dur)); $("seek").value=Math.floor(p["time-pos"]||0); $("cur").textContent=fmt(p["time-pos"]); }
+  if(!S.dragging){ $("seek").max=Math.max(1,Math.floor(dur)); $("seek").value=Math.floor(p["time-pos"]||0); paint($("seek")); $("cur").textContent=fmt(p["time-pos"]); }
   $("dur").textContent=fmt(dur);
-  $("pp").innerHTML=p.pause?"&#9654;":"&#10074;&#10074;";
-  $("mute").innerHTML=p.mute===true||p.mute==="yes"?"&#128263;":"&#128266;";
-  if(document.activeElement!==$("vol")) $("vol").value=p.volume??100;
+  $("pp").innerHTML=ico(p.pause?"play":"pause","size-8");
+  $("mute").innerHTML=ico(p.mute===true||p.mute==="yes"?"volume-x":"volume-2","size-6");
+  if(document.activeElement!==$("vol")){ $("vol").value=p.volume??100; paint($("vol")); }
   fillSelect($("speed"),[0.5,0.75,1,1.25,1.5,1.75,2].map(v=>[v,v+"x"]),String(p.speed??1));
   const tr=Array.isArray(p["track-list"])?p["track-list"]:[];
   fillSelect($("aid"),tr.filter(t=>t.type==="audio").map(t=>[String(t.id),label(t)]),String(p.aid));
@@ -177,30 +196,33 @@ function render(){
 }
 
 function tile(it,opts){
-  const b=document.createElement("button"); b.className="tile"; b.dataset.ref=it.ref; if(it.more) b.dataset.more=it.more;
-  const im=document.createElement("img"); im.loading="lazy"; im.alt=""; im.src=img(it.poster,240); b.appendChild(im);
-  if(opts&&opts.progress>0){ const bar=document.createElement("div"); bar.className="bar"; const i=document.createElement("i"); i.style.width=opts.progress+"%"; bar.appendChild(i); b.appendChild(bar); }
-  const nm=document.createElement("div"); nm.className="nm"; nm.textContent=it.name||""; b.appendChild(nm);
-  const lb=document.createElement("div"); lb.className="lb"; lb.textContent=(opts&&opts.label)||it.year||""; b.appendChild(lb);
+  const b=el("button","relative w-28 shrink-0 snap-start text-left"); b.dataset.ref=it.ref; if(it.more) b.dataset.more=it.more;
+  const wrap=el("div","relative");
+  const im=el("img","block aspect-[2/3] w-full rounded-ctl bg-surface0 object-cover"); im.loading="lazy"; im.alt=""; im.src=img(it.poster,240); wrap.appendChild(im);
+  if(opts&&opts.progress>0){ const bar=el("div","absolute inset-x-1.5 bottom-1.5 h-1 overflow-hidden rounded-sm bg-crust/60"); const i=el("div","h-full rounded-sm bg-accent"); i.style.width=opts.progress+"%"; bar.appendChild(i); wrap.appendChild(bar); }
+  b.appendChild(wrap);
+  b.appendChild(el("div","mt-1 truncate text-xs text-text",it.name||""));
+  b.appendChild(el("div","t-cap min-h-[15px] text-subtext0",(opts&&opts.label)||it.year||""));
   return b;
 }
 function section(title,items,mk){
-  const sec=document.createElement("div"); sec.className="sec"; const h=document.createElement("h3"); h.textContent=title; sec.appendChild(h);
-  const st=document.createElement("div"); st.className="strip"; items.forEach(i=>st.appendChild(mk(i))); sec.appendChild(st); return sec;
+  const sec=el("div","-mx-4 mt-[18px]"); sec.appendChild(el("h3","t-sub mx-4 mb-2 font-semibold text-subtext0",title));
+  const st=el("div","flex snap-x snap-proximity gap-2.5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden");
+  items.forEach(i=>st.appendChild(mk(i))); sec.appendChild(st); return sec;
 }
 function renderHero(){
-  const hs=(S.home&&S.home.hero)||[]; const el=$("hero"); el.classList.toggle("hide",!hs.length); $("heroDots").innerHTML="";
-  if(!hs.length) return; const h=hs[S.hero%hs.length]; el.dataset.ref=h.ref;
+  const hs=(S.home&&S.home.hero)||[]; $("hero").hidden=!hs.length; $("heroDots").innerHTML="";
+  if(!hs.length) return; const h=hs[S.hero%hs.length]; $("hero").dataset.ref=h.ref;
   $("heroBg").style.backgroundImage=`url("${img(h.background,900)}")`;
   const lg=$("heroLogo"); if(h.logo){ lg.src=img(h.logo,400); lg.hidden=false; } else lg.hidden=true;
   $("heroTitle").textContent=h.logo?"":h.title;
-  $("heroMeta").textContent=[h.year,h.runtime,(h.genres||[]).join(", "),h.rating?"\u2605 "+h.rating:""].filter(Boolean).join("  \u00b7  ");
+  $("heroMeta").textContent=[h.year,h.runtime,(h.genres||[]).join(", "),h.rating?"★ "+h.rating:""].filter(Boolean).join("  ·  ");
   $("heroPlot").textContent=h.tagline||h.plot||"";
-  hs.forEach((_,i)=>{ const d=document.createElement("i"); if(i===S.hero%hs.length) d.className="on"; $("heroDots").appendChild(d); });
+  hs.forEach((_,i)=>$("heroDots").appendChild(el("i",i===S.hero%hs.length?"h-1.5 w-5 rounded-full bg-accent":"size-1.5 rounded-full bg-surface2")));
 }
 function renderHome(){
   const h=S.home; const has=h&&((h.cw&&h.cw.length)||(h.rows&&h.rows.length)||(h.hero&&h.hero.length));
-  $("homeEmpty").classList.toggle("hide",!!has||!S.bridge); renderHero();
+  $("homeEmpty").hidden=!!has||!S.bridge; renderHero();
   const box=$("homeRows"); box.innerHTML=""; if(!h) return;
   if(h.cw&&h.cw.length) box.appendChild(section("Continue watching",h.cw,(i)=>tile(i,{progress:i.progress,label:i.label})));
   (h.rows||[]).forEach(r=>{ if(r.items.length) box.appendChild(section(r.name,r.items,(i)=>tile(i))); });
@@ -210,52 +232,56 @@ setInterval(()=>{ const n=(S.home&&S.home.hero||[]).length; if(n>1&&S.tab==="hom
 const onDetailRoute=()=>/^#\/detail\//.test(S.route);
 function renderDetail(){
   const show=S.tab==="home"&&onDetailRoute();
-  $("homeMain").classList.toggle("hide",show); $("detail").classList.toggle("hide",!show);
+  $("homeMain").hidden=show; $("detail").hidden=!show;
   if(!show) return;
   const d=S.detail;
-  $("dLoading").classList.toggle("hide",!!d); $("dBody").classList.toggle("hide",!d);
+  $("dLoading").hidden=!!d; $("dBody").hidden=!d;
   if(!d) return;
-  if(S.lastDetailId!==d.id){ S.lastDetailId=d.id; S.season=null; $("dDesc").classList.remove("open"); window.scrollTo(0,0); }
+  if(S.lastDetailId!==d.id){ S.lastDetailId=d.id; S.season=null; $("dDesc").classList.remove("is-on"); window.scrollTo(0,0); }
   $("dBg").style.backgroundImage=d.background?`url("${img(d.background,900)}")`:"";
   const lg=$("dLogo"); if(d.logo){ lg.src=img(d.logo,400); lg.hidden=false; } else lg.hidden=true;
   $("dTitle").textContent=d.logo?"":d.name;
-  $("dMeta").textContent=[d.releaseInfo,d.runtime,d.rating?"\u2605 "+d.rating:""].filter(Boolean).join("  \u00b7  ");
+  $("dMeta").textContent=[d.releaseInfo,d.runtime,d.rating?"★ "+d.rating:""].filter(Boolean).join("  ·  ");
   $("dDesc").textContent=d.description||"";
 
-  // episodes (series only)
+  // episodes (series only): season chips plus a divided list
   const eps=$("dEps"); eps.innerHTML="";
   const vids=(d.videos||[]).filter(v=>v.season!=null&&v.episode!=null);
   if(d.type==="series"&&vids.length){
     const seasons=[...new Set(vids.map(v=>v.season))].sort((a,b)=>a-b);
     const selVid=vids.find(v=>v.id===d.selected);
     if(S.season==null||!seasons.includes(S.season)) S.season=selVid?selVid.season:(seasons.find(x=>x>0)??seasons[0]);
-    const bar=document.createElement("div"); bar.className="seasons";
-    seasons.forEach(n=>{ const b=document.createElement("button"); b.textContent=n===0?"Specials":"Season "+n; if(n===S.season) b.className="on"; b.dataset.season=n; bar.appendChild(b); });
+    const bar=el("div","flex gap-2 overflow-x-auto pt-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden");
+    seasons.forEach(n=>{ const b=el("button","chip",n===0?"Specials":"Season "+n); b.setAttribute("aria-pressed",n===S.season); b.dataset.season=n; bar.appendChild(b); });
     eps.appendChild(bar);
+    const list=el("div","group-list");
     vids.filter(v=>v.season===S.season).sort((a,b)=>a.episode-b.episode).forEach(v=>{
-      const b=document.createElement("button"); b.className="ep"+(v.id===d.selected?" sel":""); b.dataset.video=v.id;
-      if(v.thumbnail){ const im=document.createElement("img"); im.loading="lazy"; im.alt=""; im.src=img(v.thumbnail,240); b.appendChild(im); }
-      const t=document.createElement("div"); const a=document.createElement("div"); a.className="t"; a.textContent=`${v.episode}. ${v.title||"Episode "+v.episode}`;
-      const c=document.createElement("div"); c.className="s"; c.textContent=[v.watched?"\u2713 Watched":"",v.released||""].filter(Boolean).join("  \u00b7  ");
-      t.appendChild(a); t.appendChild(c); b.appendChild(t); eps.appendChild(b);
+      const b=el("button","row row-plain w-full text-left"+(v.id===d.selected?" bg-accent/15":"")); b.dataset.video=v.id;
+      if(v.thumbnail){ const im=el("img","aspect-video w-24 shrink-0 rounded-lg bg-surface0 object-cover"); im.loading="lazy"; im.alt=""; im.src=img(v.thumbnail,240); b.appendChild(im); }
+      const t=el("div","min-w-0 flex-1"); t.appendChild(el("div","t-sub",`${v.episode}. ${v.title||"Episode "+v.episode}`));
+      t.appendChild(el("div","t-cap text-subtext0",[v.watched?"✓ Watched":"",v.released||""].filter(Boolean).join("  ·  ")));
+      b.appendChild(t); list.appendChild(b);
     });
+    eps.appendChild(list);
   }
 
-  // streams
+  // streams: one divided list per add-on
   const box=$("dStreams"); box.innerHTML="";
   const needEp=d.type==="series"&&vids.length&&!d.selected;
-  if(needEp){ const h=document.createElement("div"); h.className="hint"; h.textContent="Pick an episode to see streams."; box.appendChild(h); return; }
-  if(!d.groups.length){ const h=document.createElement("div"); h.className="hint"; h.textContent=d.loading?"Loading streams...":"No streams found."; box.appendChild(h); return; }
+  if(needEp){ box.appendChild(el("div",HINT,"Pick an episode to see streams.")); return; }
+  if(!d.groups.length){ box.appendChild(el("div",HINT,d.loading?"Loading streams...":"No streams found.")); return; }
   d.groups.forEach(g=>{
-    const gh=document.createElement("div"); gh.className="grp";
-    if(g.addon.logo){ const im=document.createElement("img"); im.alt=""; im.src=img(g.addon.logo,64); gh.appendChild(im); }
+    const gh=el("div","t-foot mt-3.5 mb-1.5 flex items-center gap-2 text-subtext0");
+    if(g.addon.logo){ const im=el("img","h-5 rounded"); im.alt=""; im.src=img(g.addon.logo,64); gh.appendChild(im); }
     gh.appendChild(document.createTextNode(g.addon.name||"Add-on")); box.appendChild(gh);
-    g.items.forEach(it=>{ const b=document.createElement("button"); b.className="st"; b.dataset.idx=it.idx;
-      const n=document.createElement("div"); n.className="n"; n.textContent=it.name||"Stream"; b.appendChild(n);
-      if(it.description){ const x=document.createElement("div"); x.className="d"; x.textContent=it.description; b.appendChild(x); }
-      box.appendChild(b); });
+    const list=el("div","group-list");
+    g.items.forEach(it=>{ const b=el("button","row row-plain w-full flex-col !items-start !gap-0.5 text-left"); b.dataset.idx=it.idx;
+      b.appendChild(el("div","t-sub font-semibold whitespace-pre-line",it.name||"Stream"));
+      if(it.description) b.appendChild(el("div","t-foot whitespace-pre-line text-subtext0",it.description));
+      list.appendChild(b); });
+    box.appendChild(list);
   });
-  if(d.loading){ const h=document.createElement("div"); h.className="hint"; h.textContent="Loading more streams..."; box.appendChild(h); }
+  if(d.loading) box.appendChild(el("div",HINT,"Loading more streams..."));
 }
 
 function connect(){
@@ -268,7 +294,7 @@ function connect(){
     else if(m.k==="prop") S.props[m.name]=m.data;
     else if(m.k==="now") S.now=m.now;
     else if(m.k==="bridge"){ S.bridge=m.up; if(!m.up){ S.props={}; S.now=null; S.home=null; S.detail=null; renderHome(); renderDetail(); } }
-    else if(m.k==="blocked") toast("Stremio blocked that action ("+(m.what||"command")+")");
+    else if(m.k==="blocked") UI.toast("Stremio blocked that action ("+(m.what||"command")+")","error");
     render(); };
   ws.onopen=render;
   ws.onclose=()=>{ S.bridge=false; render(); setTimeout(connect,1500); };
@@ -281,7 +307,11 @@ document.addEventListener("click",(e)=>{
   else if(d.delay) send({cmd:"subdelay",s:Math.round(((S.props["sub-delay"]||0)+Number(d.delay))*10)/10});
   else if(d.key) send({cmd:"key",key:d.key});
   else if(d.hash) send({cmd:"hash",h:d.hash});
+  else if(d.flavor){ store.set("ui-flavor",d.flavor); applyTheme(); }
+  else if(d.accent){ store.set("ui-accent",d.accent); applyTheme(); }
+  else if(d.radius){ store.set("ui-radius",d.radius); applyTheme(); }
 });
+$("themeBtn").onclick=()=>{ $("themePanel").hidden=!$("themePanel").hidden; };
 $("pp").onclick=()=>send({cmd:"pause",v:!S.props.pause});
 $("mute").onclick=()=>send({cmd:"mute",v:!(S.props.mute===true||S.props.mute==="yes")});
 $("skip").onclick=()=>send({cmd:"skip"}); $("next").onclick=()=>send({cmd:"next"});
@@ -292,30 +322,29 @@ $("vol").addEventListener("input",()=>send({cmd:"volume",v:Number($("vol").value
 $("speed").onchange=()=>send({cmd:"speed",v:Number($("speed").value)});
 $("aid").onchange=()=>send({cmd:"aid",id:$("aid").value});
 $("sid").onchange=()=>send({cmd:"sid",id:$("sid").value});
-function tab(t){ S.tab=t; renderDetail(); for(const x of ["home","play","nav"]){ $("tab-"+x).classList.toggle("hide",t!==x); $("n-"+x).classList.toggle("on",t===x); } }
+function tab(t){ S.tab=t; renderDetail(); for(const x of ["home","play","nav"]){ $("tab-"+x).hidden=t!==x; $("n-"+x).setAttribute("aria-selected",t===x); } }
 $("n-home").onclick=()=>{ if(S.tab==="home"&&onDetailRoute()) send({cmd:"hash",h:"#/"}); tab("home"); }; $("n-play").onclick=()=>tab("play"); $("n-nav").onclick=()=>tab("nav");
-function opened(ref){ send({cmd:"open",ref}); const t=$("toast"); t.style.background="var(--accent)"; toast("Opening on the TV..."); setTimeout(()=>t.style.background="",3600); }
+function opened(ref){ send({cmd:"open",ref}); UI.toast("Opening on the TV...","info"); }
 $("dBack").onclick=()=>send({cmd:"back"});
-$("dDesc").onclick=()=>$("dDesc").classList.toggle("open");
+$("dDesc").onclick=()=>$("dDesc").classList.toggle("is-on");
 $("dEps").addEventListener("click",(e)=>{
   const sb=e.target.closest("[data-season]"); if(sb){ S.season=Number(sb.dataset.season); renderDetail(); return; }
   const v=e.target.closest("[data-video]"); if(v) send({cmd:"video",id:v.dataset.video});
 });
 $("dStreams").addEventListener("click",(e)=>{
   const b=e.target.closest("[data-idx]"); if(!b) return;
-  send({cmd:"play",idx:Number(b.dataset.idx),rev:S.rev});
-  const t=$("toast"); t.style.background="var(--accent)"; toast("Starting..."); setTimeout(()=>t.style.background="",3600);
+  send({cmd:"play",idx:Number(b.dataset.idx),rev:S.rev}); UI.toast("Starting...","info");
 });
 $("hero").onclick=()=>opened($("hero").dataset.ref);
 let lp=null,lpFired=false;
-$("homeRows").addEventListener("touchstart",(e)=>{ const t=e.target.closest(".tile"); lpFired=false; clearTimeout(lp);
+$("homeRows").addEventListener("touchstart",(e)=>{ const t=e.target.closest("[data-ref]"); lpFired=false; clearTimeout(lp);
   if(t&&t.dataset.more) lp=setTimeout(()=>{ lpFired=true; if(navigator.vibrate) navigator.vibrate(20); opened(t.dataset.more); },550); },{passive:true});
 ["touchend","touchmove","touchcancel"].forEach(ev=>$("homeRows").addEventListener(ev,()=>clearTimeout(lp),{passive:true}));
-$("homeRows").addEventListener("click",(e)=>{ const t=e.target.closest(".tile"); if(!t) return; if(lpFired){ lpFired=false; return; } opened(t.dataset.ref); });
+$("homeRows").addEventListener("click",(e)=>{ const t=e.target.closest("[data-ref]"); if(!t) return; if(lpFired){ lpFired=false; return; } opened(t.dataset.ref); });
 let tx=0; $("hero").addEventListener("touchstart",(e)=>{ tx=e.touches[0].clientX; },{passive:true});
 $("hero").addEventListener("touchend",(e)=>{ const dx=e.changedTouches[0].clientX-tx; const n=(S.home&&S.home.hero||[]).length;
   if(Math.abs(dx)>50&&n>1){ S.hero=(S.hero+(dx<0?1:-1)+n)%n; renderHero(); } });
-connect(); render(); renderHome(); renderDetail();
+applyTheme(); connect(); render(); renderHome(); renderDetail();
 </script>
 </body>
 </html>

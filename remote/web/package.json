@@ -1,0 +1,14 @@
+{
+  "name": "kai-remote-web",
+  "private": true,
+  "scripts": {
+    "icons": "node ui/icons.mjs --list ui/icons.txt --out icons.svg",
+    "css": "tailwindcss -i ui/kit.css -o app.css --minify",
+    "build": "npm run icons && npm run css"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.1.11",
+    "lucide-static": "0.540.0",
+    "tailwindcss": "4.1.11"
+  }
+}
