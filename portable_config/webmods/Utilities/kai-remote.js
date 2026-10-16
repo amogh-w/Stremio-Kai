@@ -172,6 +172,78 @@
       } catch (e) {}
     };
 
+    // ---- detail page (mirror of meta_details) --------------------------------------------------
+    // Streams are listed by index only. Their deep links embed stream URLs and debrid tokens, so they
+    // are resolved here from fresh state when the phone says "play idx at revision rev".
+    const flattenStreams = (st) => {
+      const groups = [];
+      let loading = false;
+      for (const g of (st && st.streams) || []) {
+        const c = g && g.content;
+        if (!c) continue;
+        if (c.type === "Loading") loading = true;
+        if (c.type !== "Ready" || !Array.isArray(c.content)) continue;
+        const items = c.content.filter((s) => s && s.deepLinks && typeof s.deepLinks.player === "string");
+        if (!items.length) continue;
+        const man = (g.addon && g.addon.manifest) || {};
+        groups.push({ addon: { name: cap(man.name, 60), logo: man.logo || null }, items });
+      }
+      return { groups, loading };
+    };
+    const detailMatchesRoute = (m) => {
+      const mm = /^#\/detail\/[^/]+\/([^/?]+)/.exec(location.hash);
+      return !!mm && decodeURIComponent(mm[1]) === m.id;
+    };
+    const buildDetail = (st) => {
+      const mi = st && st.metaItem && st.metaItem.content;
+      if (!mi || mi.type !== "Ready" || !mi.content || !detailMatchesRoute(mi.content)) return null;
+      const m = mi.content;
+      const { groups, loading } = flattenStreams(st);
+      let idx = 0;
+      return {
+        id: m.id, type: m.type, name: cap(m.name, 160), description: cap(m.description, 700),
+        background: m.background || null, logo: m.logo || null, poster: m.poster || null,
+        releaseInfo: cap(m.releaseInfo, 20), runtime: cap(m.runtime, 20), rating: m.imdbRating || null,
+        videos: (m.videos || []).slice(0, 500).map((v) => ({
+          id: v.id, season: v.season, episode: v.episode, title: cap(v.title || v.name, 140),
+          thumbnail: v.thumbnail || null, watched: !!v.watched, released: cap(v.released, 10),
+        })),
+        selected: st.selected && st.selected.streamPath ? st.selected.streamPath.id : null,
+        loading,
+        groups: groups.map((g) => ({
+          addon: g.addon,
+          items: g.items.map((s) => ({ idx: idx++, name: cap(s.name, 160), description: cap(s.description, 320) })),
+        })),
+      };
+    };
+    let detailSig = "null";
+    let detailRev = 0;
+    const refreshDetail = async (force) => {
+      try {
+        let d = null;
+        if (/^#\/detail\//.test(location.hash)) d = buildDetail(await window.services.core.transport.getState("meta_details"));
+        const sig = JSON.stringify(d);
+        if (sig !== detailSig) { detailSig = sig; detailRev++; } else if (!force) return;
+        up({ k: "detail", detail: d, rev: detailRev });
+      } catch (e) {}
+    };
+    const openVideo = async (id) => {
+      try {
+        const st = await window.services.core.transport.getState("meta_details");
+        const v = (st.metaItem.content.content.videos || []).find((x) => x.id === id);
+        const link = v && v.deepLinks && v.deepLinks.metaDetailsStreams;
+        if (typeof link === "string" && link.startsWith("#/")) location.hash = link;
+      } catch (e) {}
+    };
+    const playStream = async (idx, rev) => {
+      try {
+        if (rev !== detailRev) return refreshDetail(true); // phone saw an older list: resync instead of guessing
+        const st = await window.services.core.transport.getState("meta_details");
+        const s = flattenStreams(st).groups.flatMap((g) => g.items)[idx];
+        if (s) location.hash = s.deepLinks.player;
+      } catch (e) {}
+    };
+
     const attachCore = () => {
       try {
         const core = window.services && window.services.core;
@@ -180,6 +252,7 @@
           if (!Array.isArray(models)) return;
           if (models.includes("player")) refreshNow();
           if (models.includes("continue_watching_preview") || models.includes("board")) refreshHome();
+          if (models.includes("meta_details")) refreshDetail();
         });
         refreshNow();
         refreshHome();
@@ -190,7 +263,7 @@
 
     // ---- route ---------------------------------------------------------------------------------
     const sendRoute = () => up({ k: "route", hash: /^#\/player/.test(location.hash) ? "#/player" : location.hash || "#/" });
-    window.addEventListener("hashchange", sendRoute);
+    window.addEventListener("hashchange", () => { sendRoute(); setTimeout(() => refreshDetail(), 150); });
 
     // ---- daemon -> page: commands --------------------------------------------------------------
     const run = (m) => {
@@ -213,6 +286,8 @@
         case "back": return history.back();
         case "key": return pressKey(m.key);
         case "open": return openRef(String(m.ref));
+        case "video": return openVideo(String(m.id));
+        case "play": return playStream(Number(m.idx), Number(m.rev));
         case "hash": if (typeof m.h === "string" && /^#\/[\w#/?=&:%.~-]*$/.test(m.h)) location.hash = m.h; return;
       }
     };
@@ -229,6 +304,7 @@
           sendRoute();
           refreshNow();
           refreshHome(true);
+          refreshDetail(true);
         };
         ws.onmessage = (ev) => { try { run(JSON.parse(ev.data)); } catch (e) {} };
         ws.onclose = () => setTimeout(connect, 2000);

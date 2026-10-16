@@ -14,6 +14,8 @@ struct Snapshot {
     now: Value,
     route: String,
     home: Value,
+    detail: Value,
+    rev: u64,
 }
 
 pub struct App {
@@ -43,7 +45,7 @@ impl App {
 
     fn snapshot_msg(&self) -> String {
         let s = self.snap.lock().unwrap();
-        json!({ "k": "snapshot", "bridge": self.bridge_up(), "props": s.props, "now": s.now, "route": s.route, "home": s.home }).to_string()
+        json!({ "k": "snapshot", "bridge": self.bridge_up(), "props": s.props, "now": s.now, "route": s.route, "home": s.home, "detail": s.detail, "rev": s.rev }).to_string()
     }
 
     fn announce_bridge(&self) {
@@ -75,6 +77,7 @@ pub async fn bridge(app: Arc<App>, mut ws: WebSocket) {
         s.props.clear();
         s.now = Value::Null;
         s.home = Value::Null;
+        s.detail = Value::Null;
         s.route.clear();
     }
     app.announce_bridge();
@@ -93,6 +96,10 @@ fn ingest(app: &App, text: &str) {
                 }
             }
             Some("now") => s.now = v.get("now").cloned().unwrap_or(Value::Null),
+            Some("detail") => {
+                s.detail = v.get("detail").cloned().unwrap_or(Value::Null);
+                s.rev = v.get("rev").and_then(Value::as_u64).unwrap_or(0);
+            }
             Some("home") => s.home = v.get("home").cloned().unwrap_or(Value::Null),
             Some("route") => s.route = v.get("hash").and_then(Value::as_str).unwrap_or("").to_string(),
             Some("blocked") => {}

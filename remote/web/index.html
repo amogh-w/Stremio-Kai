@@ -47,6 +47,25 @@ nav button{flex:1}nav button.on{background:var(--accent);color:#11111b}
 .tile .lb{font-size:11px;color:var(--dim);min-height:15px}
 .tile .bar{position:absolute;left:6px;right:6px;top:calc(112px * 1.5 - 12px);height:4px;border-radius:2px;background:rgba(0,0,0,.55)}
 .tile .bar i{display:block;height:100%;border-radius:2px;background:var(--accent)}
+.dhead{display:flex;align-items:center;padding:10px 0 4px}
+.dhero{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:16/10;background:var(--card);margin-top:6px}
+.dhero .bg{position:absolute;inset:0;background:center/cover}
+.dhero .shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(17,17,27,.95) 0%,rgba(17,17,27,.2) 65%,transparent)}
+.dhero .txt{position:absolute;left:14px;right:14px;bottom:12px}
+.dhero img.hl{max-height:56px;max-width:68%;display:block;margin-bottom:6px}
+.dhero h2{margin:0;font-size:21px}.dhero .meta{color:var(--dim);font-size:13px;margin-top:2px}
+.desc{color:#bac2de;font-size:14px;margin:12px 0;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.desc.open{-webkit-line-clamp:unset}
+.seasons{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}.seasons::-webkit-scrollbar{display:none}
+.seasons button{flex:0 0 auto;min-height:38px;padding:0 14px;border-radius:19px}.seasons button.on{background:var(--accent);color:#11111b}
+.ep{display:flex;gap:10px;align-items:center;width:100%;text-align:left;padding:8px;margin:6px 0;min-height:0;background:color-mix(in srgb,var(--card) 88%,transparent)}
+.ep.sel{outline:2px solid var(--accent)}
+.ep img{width:96px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;background:var(--card2);flex:0 0 auto}
+.ep .t{font-size:14px}.ep .s{font-size:12px;color:var(--dim)}
+.grp{margin:14px 0 4px;color:var(--dim);font-size:13px;display:flex;align-items:center;gap:8px}.grp img{height:20px;border-radius:4px}
+.st{display:block;width:100%;text-align:left;margin:6px 0;padding:10px 12px;min-height:0;background:color-mix(in srgb,var(--card) 88%,transparent)}
+.st .n{font-weight:600;font-size:14px;white-space:pre-line}.st .d{font-size:12px;color:var(--dim);white-space:pre-line;margin-top:2px}
+.hint{color:var(--dim);text-align:center;padding:18px 8px;font-size:14px}
 #off{text-align:center;color:var(--dim);padding:28px 8px}
 </style>
 </head>
@@ -56,10 +75,21 @@ nav button{flex:1}nav button.on{background:var(--accent);color:#11111b}
 <header><span class="dot" id="dot"></span><span id="status">Connecting...</span></header>
 
 <section id="tab-home">
-  <div id="homeEmpty" class="card hide" style="text-align:center;color:var(--dim)">Waiting for the home data from Stremio...</div>
+  <div id="homeMain"><div id="homeEmpty" class="card hide" style="text-align:center;color:var(--dim)">Waiting for the home data from Stremio...</div>
   <div id="hero" class="hero hide"><div class="bg" id="heroBg"></div><div class="shade"></div><div class="txt"><img id="heroLogo" class="hl" alt="" hidden><h2 id="heroTitle"></h2><div class="meta" id="heroMeta"></div><p id="heroPlot"></p></div></div>
   <div class="dots" id="heroDots"></div>
   <div id="homeRows"></div>
+  </div>
+  <div id="detail" class="hide">
+    <div class="dhead"><button id="dBack">&#8249; Back</button></div>
+    <div id="dLoading" class="hint hide">Loading...</div>
+    <div id="dBody" class="hide">
+      <div class="dhero"><div class="bg" id="dBg"></div><div class="shade"></div><div class="txt"><img id="dLogo" class="hl" alt="" hidden><h2 id="dTitle"></h2><div class="meta" id="dMeta"></div></div></div>
+      <p class="desc" id="dDesc"></p>
+      <div id="dEps"></div>
+      <div id="dStreams"></div>
+    </div>
+  </div>
 </section>
 
 <section id="tab-play" class="hide">
@@ -104,7 +134,7 @@ nav button{flex:1}nav button.on{background:var(--accent);color:#11111b}
 <script>
 "use strict";
 const $=(id)=>document.getElementById(id);
-const S={props:{},now:null,home:null,route:"",bridge:false,ws:null,dragging:false,tab:"home",hero:0};
+const S={props:{},now:null,home:null,route:"",bridge:false,ws:null,dragging:false,tab:"home",hero:0,detail:null,rev:0,season:null,lastDetailId:null};
 const img=(u,w)=>u?`/img?w=${w}&u=${encodeURIComponent(u)}`:"";
 const send=(o)=>{ if(S.ws&&S.ws.readyState===1) S.ws.send(JSON.stringify(o)); if(navigator.vibrate) navigator.vibrate(8); };
 
@@ -147,7 +177,7 @@ function render(){
 }
 
 function tile(it,opts){
-  const b=document.createElement("button"); b.className="tile"; b.dataset.ref=it.ref;
+  const b=document.createElement("button"); b.className="tile"; b.dataset.ref=it.ref; if(it.more) b.dataset.more=it.more;
   const im=document.createElement("img"); im.loading="lazy"; im.alt=""; im.src=img(it.poster,240); b.appendChild(im);
   if(opts&&opts.progress>0){ const bar=document.createElement("div"); bar.className="bar"; const i=document.createElement("i"); i.style.width=opts.progress+"%"; bar.appendChild(i); b.appendChild(bar); }
   const nm=document.createElement("div"); nm.className="nm"; nm.textContent=it.name||""; b.appendChild(nm);
@@ -177,15 +207,67 @@ function renderHome(){
 }
 setInterval(()=>{ const n=(S.home&&S.home.hero||[]).length; if(n>1&&S.tab==="home"&&!document.hidden){ S.hero=(S.hero+1)%n; renderHero(); } },8000);
 
+const onDetailRoute=()=>/^#\/detail\//.test(S.route);
+function renderDetail(){
+  const show=S.tab==="home"&&onDetailRoute();
+  $("homeMain").classList.toggle("hide",show); $("detail").classList.toggle("hide",!show);
+  if(!show) return;
+  const d=S.detail;
+  $("dLoading").classList.toggle("hide",!!d); $("dBody").classList.toggle("hide",!d);
+  if(!d) return;
+  if(S.lastDetailId!==d.id){ S.lastDetailId=d.id; S.season=null; $("dDesc").classList.remove("open"); window.scrollTo(0,0); }
+  $("dBg").style.backgroundImage=d.background?`url("${img(d.background,900)}")`:"";
+  const lg=$("dLogo"); if(d.logo){ lg.src=img(d.logo,400); lg.hidden=false; } else lg.hidden=true;
+  $("dTitle").textContent=d.logo?"":d.name;
+  $("dMeta").textContent=[d.releaseInfo,d.runtime,d.rating?"\u2605 "+d.rating:""].filter(Boolean).join("  \u00b7  ");
+  $("dDesc").textContent=d.description||"";
+
+  // episodes (series only)
+  const eps=$("dEps"); eps.innerHTML="";
+  const vids=(d.videos||[]).filter(v=>v.season!=null&&v.episode!=null);
+  if(d.type==="series"&&vids.length){
+    const seasons=[...new Set(vids.map(v=>v.season))].sort((a,b)=>a-b);
+    const selVid=vids.find(v=>v.id===d.selected);
+    if(S.season==null||!seasons.includes(S.season)) S.season=selVid?selVid.season:(seasons.find(x=>x>0)??seasons[0]);
+    const bar=document.createElement("div"); bar.className="seasons";
+    seasons.forEach(n=>{ const b=document.createElement("button"); b.textContent=n===0?"Specials":"Season "+n; if(n===S.season) b.className="on"; b.dataset.season=n; bar.appendChild(b); });
+    eps.appendChild(bar);
+    vids.filter(v=>v.season===S.season).sort((a,b)=>a.episode-b.episode).forEach(v=>{
+      const b=document.createElement("button"); b.className="ep"+(v.id===d.selected?" sel":""); b.dataset.video=v.id;
+      if(v.thumbnail){ const im=document.createElement("img"); im.loading="lazy"; im.alt=""; im.src=img(v.thumbnail,240); b.appendChild(im); }
+      const t=document.createElement("div"); const a=document.createElement("div"); a.className="t"; a.textContent=`${v.episode}. ${v.title||"Episode "+v.episode}`;
+      const c=document.createElement("div"); c.className="s"; c.textContent=[v.watched?"\u2713 Watched":"",v.released||""].filter(Boolean).join("  \u00b7  ");
+      t.appendChild(a); t.appendChild(c); b.appendChild(t); eps.appendChild(b);
+    });
+  }
+
+  // streams
+  const box=$("dStreams"); box.innerHTML="";
+  const needEp=d.type==="series"&&vids.length&&!d.selected;
+  if(needEp){ const h=document.createElement("div"); h.className="hint"; h.textContent="Pick an episode to see streams."; box.appendChild(h); return; }
+  if(!d.groups.length){ const h=document.createElement("div"); h.className="hint"; h.textContent=d.loading?"Loading streams...":"No streams found."; box.appendChild(h); return; }
+  d.groups.forEach(g=>{
+    const gh=document.createElement("div"); gh.className="grp";
+    if(g.addon.logo){ const im=document.createElement("img"); im.alt=""; im.src=img(g.addon.logo,64); gh.appendChild(im); }
+    gh.appendChild(document.createTextNode(g.addon.name||"Add-on")); box.appendChild(gh);
+    g.items.forEach(it=>{ const b=document.createElement("button"); b.className="st"; b.dataset.idx=it.idx;
+      const n=document.createElement("div"); n.className="n"; n.textContent=it.name||"Stream"; b.appendChild(n);
+      if(it.description){ const x=document.createElement("div"); x.className="d"; x.textContent=it.description; b.appendChild(x); }
+      box.appendChild(b); });
+  });
+  if(d.loading){ const h=document.createElement("div"); h.className="hint"; h.textContent="Loading more streams..."; box.appendChild(h); }
+}
+
 function connect(){
   const ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws/phone"); S.ws=ws;
   ws.onmessage=(ev)=>{ const m=JSON.parse(ev.data);
-    if(m.k==="snapshot"){ S.props=m.props||{}; S.now=m.now||null; S.bridge=!!m.bridge; S.home=m.home||null; S.route=m.route||""; renderHome(); }
+    if(m.k==="snapshot"){ S.props=m.props||{}; S.now=m.now||null; S.bridge=!!m.bridge; S.home=m.home||null; S.route=m.route||""; S.detail=m.detail||null; S.rev=m.rev||0; renderHome(); renderDetail(); }
+    else if(m.k==="detail"){ S.detail=m.detail; S.rev=m.rev; renderDetail(); }
     else if(m.k==="home"){ S.home=m.home; renderHome(); }
-    else if(m.k==="route"){ const was=S.route; S.route=m.hash; if(m.hash==="#/player"&&was!=="#/player") tab("play"); }
+    else if(m.k==="route"){ const was=S.route; S.route=m.hash; if(!onDetailRoute()) S.detail=null; if(m.hash==="#/player"&&was!=="#/player") tab("play"); else if(was!=="#/player"&&m.hash!=="#/player") tab("home"); renderDetail(); }
     else if(m.k==="prop") S.props[m.name]=m.data;
     else if(m.k==="now") S.now=m.now;
-    else if(m.k==="bridge"){ S.bridge=m.up; if(!m.up){ S.props={}; S.now=null; S.home=null; renderHome(); } }
+    else if(m.k==="bridge"){ S.bridge=m.up; if(!m.up){ S.props={}; S.now=null; S.home=null; S.detail=null; renderHome(); renderDetail(); } }
     else if(m.k==="blocked") toast("Stremio blocked that action ("+(m.what||"command")+")");
     render(); };
   ws.onopen=render;
@@ -210,15 +292,30 @@ $("vol").addEventListener("input",()=>send({cmd:"volume",v:Number($("vol").value
 $("speed").onchange=()=>send({cmd:"speed",v:Number($("speed").value)});
 $("aid").onchange=()=>send({cmd:"aid",id:$("aid").value});
 $("sid").onchange=()=>send({cmd:"sid",id:$("sid").value});
-function tab(t){ S.tab=t; for(const x of ["home","play","nav"]){ $("tab-"+x).classList.toggle("hide",t!==x); $("n-"+x).classList.toggle("on",t===x); } }
-$("n-home").onclick=()=>tab("home"); $("n-play").onclick=()=>tab("play"); $("n-nav").onclick=()=>tab("nav");
+function tab(t){ S.tab=t; renderDetail(); for(const x of ["home","play","nav"]){ $("tab-"+x).classList.toggle("hide",t!==x); $("n-"+x).classList.toggle("on",t===x); } }
+$("n-home").onclick=()=>{ if(S.tab==="home"&&onDetailRoute()) send({cmd:"hash",h:"#/"}); tab("home"); }; $("n-play").onclick=()=>tab("play"); $("n-nav").onclick=()=>tab("nav");
 function opened(ref){ send({cmd:"open",ref}); const t=$("toast"); t.style.background="var(--accent)"; toast("Opening on the TV..."); setTimeout(()=>t.style.background="",3600); }
+$("dBack").onclick=()=>send({cmd:"back"});
+$("dDesc").onclick=()=>$("dDesc").classList.toggle("open");
+$("dEps").addEventListener("click",(e)=>{
+  const sb=e.target.closest("[data-season]"); if(sb){ S.season=Number(sb.dataset.season); renderDetail(); return; }
+  const v=e.target.closest("[data-video]"); if(v) send({cmd:"video",id:v.dataset.video});
+});
+$("dStreams").addEventListener("click",(e)=>{
+  const b=e.target.closest("[data-idx]"); if(!b) return;
+  send({cmd:"play",idx:Number(b.dataset.idx),rev:S.rev});
+  const t=$("toast"); t.style.background="var(--accent)"; toast("Starting..."); setTimeout(()=>t.style.background="",3600);
+});
 $("hero").onclick=()=>opened($("hero").dataset.ref);
-$("homeRows").addEventListener("click",(e)=>{ const t=e.target.closest(".tile"); if(t) opened(t.dataset.ref); });
+let lp=null,lpFired=false;
+$("homeRows").addEventListener("touchstart",(e)=>{ const t=e.target.closest(".tile"); lpFired=false; clearTimeout(lp);
+  if(t&&t.dataset.more) lp=setTimeout(()=>{ lpFired=true; if(navigator.vibrate) navigator.vibrate(20); opened(t.dataset.more); },550); },{passive:true});
+["touchend","touchmove","touchcancel"].forEach(ev=>$("homeRows").addEventListener(ev,()=>clearTimeout(lp),{passive:true}));
+$("homeRows").addEventListener("click",(e)=>{ const t=e.target.closest(".tile"); if(!t) return; if(lpFired){ lpFired=false; return; } opened(t.dataset.ref); });
 let tx=0; $("hero").addEventListener("touchstart",(e)=>{ tx=e.touches[0].clientX; },{passive:true});
 $("hero").addEventListener("touchend",(e)=>{ const dx=e.changedTouches[0].clientX-tx; const n=(S.home&&S.home.hero||[]).length;
   if(Math.abs(dx)>50&&n>1){ S.hero=(S.hero+(dx<0?1:-1)+n)%n; renderHero(); } });
-connect(); render(); renderHome();
+connect(); render(); renderHome(); renderDetail();
 </script>
 </body>
 </html>

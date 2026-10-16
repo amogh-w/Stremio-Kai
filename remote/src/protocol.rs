@@ -19,6 +19,10 @@ pub enum Cmd {
     Back,
     Key { key: Key },
     Hash { h: String },
+    /// Pick an episode on the open detail page.
+    Video { id: String },
+    /// Play stream `idx` from detail revision `rev` (the bridge rejects a stale revision).
+    Play { idx: u32, rev: u32 },
     /// `detail:<type>/<id>`, `resume:<id>` or `streams:<id>`; the bridge turns it into a route.
     Open {
         #[serde(rename = "ref")]
@@ -49,6 +53,10 @@ fn ref_ok(r: &str) -> bool {
     known && r.len() <= 120 && r.bytes().all(|b| b.is_ascii_alphanumeric() || b":/._%-".contains(&b))
 }
 
+fn video_id_ok(id: &str) -> bool {
+    !id.is_empty() && id.len() <= 100 && id.bytes().all(|b| b.is_ascii_alphanumeric() || b":._%-".contains(&b))
+}
+
 impl Cmd {
     /// Returns a sanitized command, or None when the values are out of range.
     pub fn validate(self) -> Option<Cmd> {
@@ -59,6 +67,8 @@ impl Cmd {
             Cmd::Subdelay { s } if s.is_finite() && s.abs() <= 60.0 => Some(self),
             Cmd::Aid { ref id } | Cmd::Sid { ref id } if track_id_ok(id) => Some(self),
             Cmd::Hash { ref h } if hash_ok(h) => Some(self),
+            Cmd::Video { ref id } if video_id_ok(id) => Some(self),
+            Cmd::Play { idx, .. } if idx < 1000 => Some(self),
             Cmd::Open { ref target } if ref_ok(target) => Some(self),
             Cmd::Pause { .. } | Cmd::Mute { .. } | Cmd::Skip | Cmd::Next | Cmd::Ok | Cmd::Back | Cmd::Key { .. } => Some(self),
             _ => None,
