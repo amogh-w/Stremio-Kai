@@ -3,43 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#11111b">
+<meta name="theme-color" content="#1e1e2e">
+<meta name="color-scheme" content="dark light">
+<meta name="application-name" content="Kai Remote">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kai Remote">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Kai Remote</title>
 <link rel="stylesheet" href="/app.css">
 <script src="/theme.js"></script>
 </head>
-<body class="mx-auto min-h-dvh max-w-[480px] px-4 pb-28">
+<body class="mx-auto min-h-dvh max-w-[480px] touch-manipulation px-4 pb-28 [-webkit-touch-callout:none]">
 <div id="backdrop" class="fixed inset-0 -z-10 scale-125 bg-cover bg-center opacity-0 blur-2xl transition-opacity duration-500"></div>
 
-<header class="flex items-center gap-2 pt-3.5 pb-1.5 text-[13px] text-subtext0">
+<header class="flex items-center gap-2 pt-[calc(14px+env(safe-area-inset-top))] pb-1.5 text-[13px] text-subtext0">
   <span id="dot" class="size-2.5 rounded-full bg-red [&.is-on]:bg-green"></span>
   <span id="status">Connecting...</span>
-  <button id="themeBtn" aria-label="Theme" class="btn btn-gray btn-icon ml-auto"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#palette"/></svg></button>
+  <button id="settingsBtn" aria-label="Settings" data-open="d-settings" class="btn btn-gray btn-icon ml-auto"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#settings"/></svg></button>
 </header>
-
-<div id="themePanel" hidden class="card my-3">
-  <div class="t-foot mb-2 text-subtext0">Flavor</div>
-  <div class="flex flex-wrap gap-2">
-    <button class="chip" data-flavor="auto">Auto</button><button class="chip" data-flavor="latte">Latte</button><button class="chip" data-flavor="frappe">Frapp&eacute;</button><button class="chip" data-flavor="macchiato">Macchiato</button><button class="chip" data-flavor="mocha">Mocha</button>
-  </div>
-  <div class="t-foot mt-4 mb-2 text-subtext0">Corner radius</div>
-  <div class="flex gap-2"><button class="chip" data-radius="tight">Tight</button><button class="chip" data-radius="apple">Apple</button><button class="chip" data-radius="soft">Soft</button></div>
-  <div class="t-foot mt-4 mb-2 text-subtext0">Accent</div>
-  <div class="flex flex-wrap gap-2.5">
-    <button aria-label="Rosewater" data-accent="rosewater" class="size-8 rounded-full bg-rosewater ring-text ring-offset-2 ring-offset-base"></button>
-    <button aria-label="Flamingo" data-accent="flamingo" class="size-8 rounded-full bg-flamingo ring-text ring-offset-2 ring-offset-base"></button>
-    <button aria-label="Pink" data-accent="pink" class="size-8 rounded-full bg-pink ring-text ring-offset-2 ring-offset-base"></button>
-    <button aria-label="Mauve" data-accent="mauve" class="size-8 rounded-full bg-mauve ring-text ring-offset-2 ring-offset-base"></button>
-    <button aria-label="Red" data-accent="red" class="size-8 rounded-full bg-red ring-text ring-offset-2 ring-offset-base"></button>
-    <button aria-label="Peach" data-accent="peach" class="size-8 rounded-full bg-peach ring-text ring-offset-2 ring-offset-base"></button>
-    <button aria-label="Yellow" data-accent="yellow" class="size-8 rounded-full bg-yellow ring-text ring-offset-2 ring-offset-base"></button>
-    <button aria-label="Green" data-accent="green" class="size-8 rounded-full bg-green ring-text ring-offset-2 ring-offset-base"></button>
-    <button aria-label="Teal" data-accent="teal" class="size-8 rounded-full bg-teal ring-text ring-offset-2 ring-offset-base"></button>
-    <button aria-label="Sky" data-accent="sky" class="size-8 rounded-full bg-sky ring-text ring-offset-2 ring-offset-base"></button>
-    <button aria-label="Blue" data-accent="blue" class="size-8 rounded-full bg-blue ring-text ring-offset-2 ring-offset-base"></button>
-    <button aria-label="Lavender" data-accent="lavender" class="size-8 rounded-full bg-lavender ring-text ring-offset-2 ring-offset-base"></button>
-  </div>
-</div>
 
 <section id="tab-home">
   <div id="homeMain">
@@ -124,13 +109,6 @@
 </section>
 
 <section id="tab-nav" hidden>
-  <div class="card my-3">
-    <div class="mx-auto my-3 grid max-w-[280px] grid-cols-3 gap-2.5">
-      <span></span><button class="btn btn-gray h-[72px]" data-key="ArrowUp" aria-label="Up"><svg class="size-8 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-up"/></svg></button><span></span>
-      <button class="btn btn-gray h-[72px]" data-key="ArrowLeft" aria-label="Left"><svg class="size-8 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-left"/></svg></button><button id="ok" class="btn btn-filled h-[72px] text-2xl">OK</button><button class="btn btn-gray h-[72px]" data-key="ArrowRight" aria-label="Right"><svg class="size-8 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-right"/></svg></button>
-      <button id="back" class="btn btn-gray h-[72px]" aria-label="Back"><svg class="size-7 shrink-0" aria-hidden="true"><use href="/icons.svg#undo-2"/></svg></button><button class="btn btn-gray h-[72px]" data-key="ArrowDown" aria-label="Down"><svg class="size-8 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-down"/></svg></button><button class="btn btn-gray h-[72px]" data-key="Escape" aria-label="Escape"><svg class="size-7 shrink-0" aria-hidden="true"><use href="/icons.svg#x"/></svg></button>
-    </div>
-  </div>
   <div class="card my-3 grid grid-cols-3 gap-2">
     <button class="btn btn-gray" data-hash="#/"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#house"/></svg>Home</button>
     <button class="btn btn-gray" data-hash="#/discover"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#compass"/></svg>Discover</button>
@@ -147,14 +125,82 @@
   <button id="n-nav" class="tab" aria-selected="false"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#gamepad-2"/></svg>Navigate</button>
 </nav>
 
+
+<dialog id="d-settings" class="sheet !bg-mantle max-h-[92dvh] overflow-y-auto">
+  <div class="p-4 pb-8">
+    <div class="sheet-grip -mx-4 -mt-4 mb-1 px-4 pt-4 pb-1">
+      <div class="mx-auto mb-3 h-1.5 w-10 rounded-full bg-surface2"></div>
+      <div class="flex items-center justify-between"><h2 class="t-title2">Settings</h2><button class="btn btn-plain btn-sm" data-close>Done</button></div>
+    </div>
+
+    <div class="t-foot mt-4 mb-1.5 px-1 text-subtext0 uppercase tracking-wide">Appearance</div>
+    <div class="group-list">
+      <div class="row row-plain flex-col !items-start !gap-2 py-3"><span class="t-sub text-subtext1">Flavor</span>
+        <div class="flex flex-wrap gap-2"><button class="chip" data-flavor="auto">Auto</button><button class="chip" data-flavor="latte">Latte</button><button class="chip" data-flavor="frappe">Frapp&eacute;</button><button class="chip" data-flavor="macchiato">Macchiato</button><button class="chip" data-flavor="mocha">Mocha</button></div></div>
+      <div class="row row-plain flex-col !items-start !gap-2 py-3"><span class="t-sub text-subtext1">Corner radius</span>
+        <div class="flex gap-2"><button class="chip" data-radius="tight">Tight</button><button class="chip" data-radius="apple">Apple</button><button class="chip" data-radius="soft">Soft</button></div></div>
+      <div class="row row-plain flex-col !items-start !gap-2 py-3"><span class="t-sub text-subtext1">Accent</span>
+        <div class="flex flex-wrap gap-2.5">
+    <button aria-label="Rosewater" data-accent="rosewater" class="size-8 rounded-full bg-rosewater ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Flamingo" data-accent="flamingo" class="size-8 rounded-full bg-flamingo ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Pink" data-accent="pink" class="size-8 rounded-full bg-pink ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Mauve" data-accent="mauve" class="size-8 rounded-full bg-mauve ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Red" data-accent="red" class="size-8 rounded-full bg-red ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Peach" data-accent="peach" class="size-8 rounded-full bg-peach ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Yellow" data-accent="yellow" class="size-8 rounded-full bg-yellow ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Green" data-accent="green" class="size-8 rounded-full bg-green ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Teal" data-accent="teal" class="size-8 rounded-full bg-teal ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Sky" data-accent="sky" class="size-8 rounded-full bg-sky ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Blue" data-accent="blue" class="size-8 rounded-full bg-blue ring-text ring-offset-2 ring-offset-base"></button>
+    <button aria-label="Lavender" data-accent="lavender" class="size-8 rounded-full bg-lavender ring-text ring-offset-2 ring-offset-base"></button>
+  </div></div>
+      <label class="row row-plain"><span class="flex-1">Blurred backdrop on Playing</span><span class="switch switch-accent"><input type="checkbox" data-cfg="backdrop"></span></label>
+    </div>
+
+    <div class="t-foot mt-5 mb-1.5 px-1 text-subtext0 uppercase tracking-wide">Playback</div>
+    <div class="group-list">
+      <div class="row row-plain"><span class="flex-1">Short skip</span>
+        <div class="seg" data-group data-skip="skipShort"><span class="thumb"></span><button data-v="5" aria-pressed="false">5s</button><button data-v="10" aria-pressed="false">10s</button><button data-v="15" aria-pressed="false">15s</button></div></div>
+      <div class="row row-plain"><span class="flex-1">Long skip</span>
+        <div class="seg" data-group data-skip="skipLong"><span class="thumb"></span><button data-v="30" aria-pressed="false">30s</button><button data-v="60" aria-pressed="false">60s</button><button data-v="90" aria-pressed="false">90s</button></div></div>
+      <label class="row row-plain"><span class="flex-1">Open Playing when playback starts</span><span class="switch switch-accent"><input type="checkbox" data-cfg="autoPlaying"></span></label>
+    </div>
+
+    <div class="t-foot mt-5 mb-1.5 px-1 text-subtext0 uppercase tracking-wide">Home</div>
+    <div class="group-list">
+      <label class="row row-plain"><span class="flex-1">Auto-rotate banner</span><span class="switch switch-accent"><input type="checkbox" data-cfg="heroRotate"></span></label>
+    </div>
+
+    <div class="t-foot mt-5 mb-1.5 px-1 text-subtext0 uppercase tracking-wide">Feedback</div>
+    <div class="group-list">
+      <label class="row row-plain"><span class="flex-1">Haptic feedback</span><span class="switch switch-accent"><input type="checkbox" data-cfg="haptics"></span></label>
+    </div>
+
+    <div class="t-foot mt-5 mb-1.5 px-1 text-subtext0 uppercase tracking-wide">Connection</div>
+    <div class="group-list">
+      <div class="row row-plain"><span class="flex-1">Stremio</span><span id="cfgStatus" class="text-subtext0">Waiting</span></div>
+      <div class="row row-plain"><span class="flex-1">Remote address</span><span id="cfgHost" class="t-sub text-subtext0"></span></div>
+    </div>
+
+    <button id="cfgReset" class="btn btn-danger-tinted btn-block mt-6">Reset all settings</button>
+  </div>
+</dialog>
+
 <script src="/ui.js"></script>
 <script>
 "use strict";
 const $=(id)=>document.getElementById(id);
+const DEF={haptics:true,autoPlaying:true,heroRotate:true,backdrop:true,skipShort:10,skipLong:30};
+const cfg={...DEF}; try{ Object.assign(cfg,JSON.parse(store.get("kai-settings")||"{}")); }catch(e){}
+const saveCfg=()=>store.set("kai-settings",JSON.stringify(cfg));
+const buzz=(ms)=>{ if(cfg.haptics&&navigator.vibrate) navigator.vibrate(ms); };
 const S={props:{},now:null,home:null,route:"",bridge:false,ws:null,dragging:false,tab:"home",hero:0,detail:null,rev:0,season:null,lastDetailId:null};
 const img=(u,w)=>u?`/img?w=${w}&u=${encodeURIComponent(u)}`:"";
-const send=(o)=>{ if(S.ws&&S.ws.readyState===1) S.ws.send(JSON.stringify(o)); if(navigator.vibrate) navigator.vibrate(8); };
+const send=(o)=>{ if(S.ws&&S.ws.readyState===1) S.ws.send(JSON.stringify(o)); buzz(8); };
 const ico=(n,cls)=>`<svg class="${cls||"size-5"} shrink-0" aria-hidden="true"><use href="/icons.svg#${n}"/></svg>`;
+/* render() runs on every live update (about once a second). Re-creating an icon each time makes it flicker,
+   so only touch the DOM when the icon name actually changes. */
+const setIcon=(btn,name,cls)=>{ if(btn.dataset.icon===name) return; btn.dataset.icon=name; btn.innerHTML=ico(name,cls); };
 const el=(tag,cls,text)=>{ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; };
 const HINT="t-sub px-2 py-4 text-center text-subtext0";
 const paint=(r)=>r.style.setProperty("--p",((r.value-r.min)/(r.max-r.min||1))*100+"%");
@@ -171,7 +217,7 @@ const label=(t)=>[t.lang&&t.lang.toUpperCase(),t.title,t.codec].filter(Boolean).
 
 function render(){
   const p=S.props, playing=S.bridge && p.duration!=null;
-  $("dot").classList.toggle("is-on",S.bridge);
+  $("dot").classList.toggle("is-on",S.bridge); $("cfgStatus").textContent=S.bridge?"Connected":"Waiting";
   $("status").textContent=S.bridge?"Connected to Stremio":(S.ws&&S.ws.readyState===1?"Waiting for Stremio...":"Connecting...");
   $("off").hidden=playing; $("player").hidden=!playing;
   const n=S.now;
@@ -179,13 +225,13 @@ function render(){
   $("ep").textContent=n&&n.season!=null?`S${n.season} E${n.episode}${n.title&&n.title!==n.name?" - "+n.title.replace(/^.* - /,""):""}`:"";
   const setImg=(e,src)=>{ if(src){ if(e.src!==src) e.src=src; e.hidden=false; } else e.hidden=true; };
   setImg($("poster"),n&&img(n.poster,240)); setImg($("logo"),n&&img(n.logo,400));
-  const bg=$("backdrop"); const b=n&&n.background; bg.style.backgroundImage=b?`url("${img(b,900)}")`:""; bg.style.opacity=b?0.3:0;
+  const bg=$("backdrop"); const b=n&&n.background; bg.style.backgroundImage=b?`url("${img(b,900)}")`:""; bg.style.opacity=(b&&cfg.backdrop)?0.3:0;
   if(!playing) return;
   const dur=p.duration||0;
   if(!S.dragging){ $("seek").max=Math.max(1,Math.floor(dur)); $("seek").value=Math.floor(p["time-pos"]||0); paint($("seek")); $("cur").textContent=fmt(p["time-pos"]); }
   $("dur").textContent=fmt(dur);
-  $("pp").innerHTML=ico(p.pause?"play":"pause","size-8");
-  $("mute").innerHTML=ico(p.mute===true||p.mute==="yes"?"volume-x":"volume-2","size-6");
+  setIcon($("pp"),p.pause?"play":"pause","size-8");
+  setIcon($("mute"),p.mute===true||p.mute==="yes"?"volume-x":"volume-2","size-6");
   if(document.activeElement!==$("vol")){ $("vol").value=p.volume??100; paint($("vol")); }
   fillSelect($("speed"),[0.5,0.75,1,1.25,1.5,1.75,2].map(v=>[v,v+"x"]),String(p.speed??1));
   const tr=Array.isArray(p["track-list"])?p["track-list"]:[];
@@ -227,7 +273,7 @@ function renderHome(){
   if(h.cw&&h.cw.length) box.appendChild(section("Continue watching",h.cw,(i)=>tile(i,{progress:i.progress,label:i.label})));
   (h.rows||[]).forEach(r=>{ if(r.items.length) box.appendChild(section(r.name,r.items,(i)=>tile(i))); });
 }
-setInterval(()=>{ const n=(S.home&&S.home.hero||[]).length; if(n>1&&S.tab==="home"&&!document.hidden){ S.hero=(S.hero+1)%n; renderHero(); } },8000);
+setInterval(()=>{ const n=(S.home&&S.home.hero||[]).length; if(cfg.heroRotate&&n>1&&S.tab==="home"&&!document.hidden){ S.hero=(S.hero+1)%n; renderHero(); } },8000);
 
 const onDetailRoute=()=>/^#\/detail\//.test(S.route);
 function renderDetail(){
@@ -290,7 +336,7 @@ function connect(){
     if(m.k==="snapshot"){ S.props=m.props||{}; S.now=m.now||null; S.bridge=!!m.bridge; S.home=m.home||null; S.route=m.route||""; S.detail=m.detail||null; S.rev=m.rev||0; renderHome(); renderDetail(); }
     else if(m.k==="detail"){ S.detail=m.detail; S.rev=m.rev; renderDetail(); }
     else if(m.k==="home"){ S.home=m.home; renderHome(); }
-    else if(m.k==="route"){ const was=S.route; S.route=m.hash; if(!onDetailRoute()) S.detail=null; if(m.hash==="#/player"&&was!=="#/player") tab("play"); else if(was!=="#/player"&&m.hash!=="#/player") tab("home"); renderDetail(); }
+    else if(m.k==="route"){ const was=S.route; S.route=m.hash; if(!onDetailRoute()) S.detail=null; if(m.hash==="#/player"&&was!=="#/player"){ if(cfg.autoPlaying) tab("play"); } else if(was!=="#/player"&&m.hash!=="#/player") tab("home"); renderDetail(); }
     else if(m.k==="prop") S.props[m.name]=m.data;
     else if(m.k==="now") S.now=m.now;
     else if(m.k==="bridge"){ S.bridge=m.up; if(!m.up){ S.props={}; S.now=null; S.home=null; S.detail=null; renderHome(); renderDetail(); } }
@@ -311,11 +357,9 @@ document.addEventListener("click",(e)=>{
   else if(d.accent){ store.set("ui-accent",d.accent); applyTheme(); }
   else if(d.radius){ store.set("ui-radius",d.radius); applyTheme(); }
 });
-$("themeBtn").onclick=()=>{ $("themePanel").hidden=!$("themePanel").hidden; };
 $("pp").onclick=()=>send({cmd:"pause",v:!S.props.pause});
 $("mute").onclick=()=>send({cmd:"mute",v:!(S.props.mute===true||S.props.mute==="yes")});
 $("skip").onclick=()=>send({cmd:"skip"}); $("next").onclick=()=>send({cmd:"next"});
-$("ok").onclick=()=>send({cmd:"ok"}); $("back").onclick=()=>send({cmd:"back"});
 $("seek").addEventListener("input",()=>{ S.dragging=true; $("cur").textContent=fmt($("seek").value); });
 $("seek").addEventListener("change",()=>{ S.dragging=false; send({cmd:"seek",s:Number($("seek").value)}); });
 $("vol").addEventListener("input",()=>send({cmd:"volume",v:Number($("vol").value)}));
@@ -338,13 +382,44 @@ $("dStreams").addEventListener("click",(e)=>{
 $("hero").onclick=()=>opened($("hero").dataset.ref);
 let lp=null,lpFired=false;
 $("homeRows").addEventListener("touchstart",(e)=>{ const t=e.target.closest("[data-ref]"); lpFired=false; clearTimeout(lp);
-  if(t&&t.dataset.more) lp=setTimeout(()=>{ lpFired=true; if(navigator.vibrate) navigator.vibrate(20); opened(t.dataset.more); },550); },{passive:true});
+  if(t&&t.dataset.more) lp=setTimeout(()=>{ lpFired=true; buzz(20); opened(t.dataset.more); },550); },{passive:true});
 ["touchend","touchmove","touchcancel"].forEach(ev=>$("homeRows").addEventListener(ev,()=>clearTimeout(lp),{passive:true}));
 $("homeRows").addEventListener("click",(e)=>{ const t=e.target.closest("[data-ref]"); if(!t) return; if(lpFired){ lpFired=false; return; } opened(t.dataset.ref); });
 let tx=0; $("hero").addEventListener("touchstart",(e)=>{ tx=e.touches[0].clientX; },{passive:true});
 $("hero").addEventListener("touchend",(e)=>{ const dx=e.changedTouches[0].clientX-tx; const n=(S.home&&S.home.hero||[]).length;
   if(Math.abs(dx)>50&&n>1){ S.hero=(S.hero+(dx<0?1:-1)+n)%n; renderHero(); } });
-applyTheme(); connect(); render(); renderHome(); renderDetail();
+
+/* ---- settings sheet ---- */
+function applySkip(){
+  const vals=[-cfg.skipLong,-cfg.skipShort,cfg.skipShort,cfg.skipLong];
+  document.querySelectorAll("[data-seek]").forEach((b,i)=>{ b.dataset.seek=vals[i]; b.lastChild.textContent=Math.abs(vals[i]); });
+}
+function syncSettings(){
+  document.querySelectorAll("[data-cfg]").forEach((i)=>{ i.checked=!!cfg[i.dataset.cfg]; });
+  document.querySelectorAll("[data-skip]").forEach((g)=>{
+    g.querySelectorAll("button").forEach((b)=>b.setAttribute("aria-pressed",Number(b.dataset.v)===cfg[g.dataset.skip]));
+    g.dispatchEvent(new Event("sync"));
+  });
+  $("cfgHost").textContent=location.host;
+}
+document.addEventListener("change",(e)=>{ const i=e.target.closest("[data-cfg]"); if(!i) return; cfg[i.dataset.cfg]=i.checked; saveCfg(); render(); });
+document.querySelectorAll("[data-skip]").forEach((g)=>g.addEventListener("click",(e)=>{
+  const b=e.target.closest("button"); if(!b) return; cfg[g.dataset.skip]=Number(b.dataset.v); saveCfg(); applySkip();
+}));
+$("settingsBtn").addEventListener("click",()=>{ syncSettings(); setTimeout(syncSettings,80); }); /* second pass: segment thumbs need the sheet to be visible */
+let resetArmed=false;
+$("cfgReset").onclick=()=>{
+  const b=$("cfgReset");
+  if(!resetArmed){ resetArmed=true; b.textContent="Tap again to confirm"; setTimeout(()=>{ resetArmed=false; b.textContent="Reset all settings"; },3000); return; }
+  ["kai-settings","ui-flavor","ui-accent","ui-radius"].forEach((k)=>{ try{ localStorage.removeItem(k); }catch(e){} });
+  location.reload();
+};
+
+/* ---- PWA: reconnect when the app returns to the foreground; service worker only where the browser allows it ---- */
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden&&(!S.ws||S.ws.readyState>1)) connect(); });
+if("serviceWorker" in navigator&&window.isSecureContext) navigator.serviceWorker.register("/sw.js").catch(()=>{});
+
+applyTheme(); applySkip(); connect(); render(); renderHome(); renderDetail();
 </script>
 </body>
 </html>

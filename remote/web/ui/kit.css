@@ -229,6 +229,9 @@
   @starting-style { .modal[open] { transform: var(--modal-from, scale(0.94)); opacity: 0; } }
   .sheet { width: min(100vw, 560px); margin: auto auto 0; border-radius: var(--r-sheet) var(--r-sheet) 0 0; background: var(--ctp-base); box-shadow: var(--shadow-3); transform: translateY(100%); transition: transform 0.45s var(--ease), display 0.45s allow-discrete, overlay 0.45s allow-discrete; }
   .sheet[open] { transform: none; }
+  .sheet { overscroll-behavior: contain; }
+  .sheet-grip { touch-action: none; cursor: grab; }
+  .sheet-grip:active { cursor: grabbing; }
   @starting-style { .sheet[open] { transform: translateY(100%); } }
   .alert-ios { width: 270px; border-radius: calc(var(--r-card) - 2px); background: var(--ctp-base); transform: scale(0.9); opacity: 0; transition: transform 0.3s var(--ease), opacity 0.2s ease, display 0.3s allow-discrete, overlay 0.3s allow-discrete; }
   .alert-ios[open] { transform: none; opacity: 1; }

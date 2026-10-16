@@ -9,6 +9,17 @@ use axum::{
 use std::{net::SocketAddr, sync::Arc};
 
 const COOKIE: &str = "kai_remote";
+/// Static PWA files carry nothing private and browsers fetch them without cookies
+/// (manifest, install icons, service worker), so they skip the pairing check.
+const PUBLIC_PATHS: [&str; 7] = [
+    "/manifest.webmanifest",
+    "/sw.js",
+    "/icon-192.png",
+    "/icon-512.png",
+    "/icon-maskable-512.png",
+    "/apple-touch-icon.png",
+    "/favicon-32.png",
+];
 const BRIDGE_ORIGINS: [&str; 3] = [
     "https://stremio.zarg.me",
     "https://zaarrg.github.io",
@@ -52,6 +63,10 @@ pub async fn guard(
             return next.run(req).await;
         }
         return StatusCode::FORBIDDEN.into_response();
+    }
+
+    if PUBLIC_PATHS.contains(&req.uri().path()) {
+        return next.run(req).await;
     }
 
     let has_cookie = req

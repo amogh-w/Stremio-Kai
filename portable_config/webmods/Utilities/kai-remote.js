@@ -1,5 +1,5 @@
 // Kai Remote bridge. Relays mpv state and Stremio now-playing info to the local kai-remote daemon
-// (ws://127.0.0.1:8765/bridge) and executes a small whitelist of commands sent back by it.
+// (ws://127.0.0.1:5000/bridge) and executes a small whitelist of commands sent back by it.
 // Never throws: the webmods loader would re-run a throwing file every 25 ms.
 (function () {
   try {
@@ -295,7 +295,7 @@
     // ---- socket --------------------------------------------------------------------------------
     const connect = () => {
       try {
-        const ws = new WebSocket("ws://127.0.0.1:8765/bridge");
+        const ws = new WebSocket("ws://127.0.0.1:5000/bridge");
         R.ws = ws;
         ws.onopen = () => {
           observeExtra();

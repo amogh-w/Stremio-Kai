@@ -130,6 +130,26 @@ winget uninstall Allecsc.StremioKai
 ### 📦 Build Information:
 Starting with v4.0, **Stremio Kai Zero is no longer distributed as a separate build**. All features are now toggleable within the Settings page, allowing you to customize your experience from minimal to feature-rich without needing separate downloads.
   
+### 🛠️ Developing from a repo checkout (Windows):
+If you run an installed Stremio Kai against this repo, link the folders instead of copying files. Edits then show up after a restart of `stremio.exe`. Run these in PowerShell (no admin needed), adjusting the paths:
+
+```powershell
+$install = "$env:LOCALAPPDATA\Programs\Stremio Kai"
+$repo    = "C:\Users\<you>\Projects\Stremio-Kai"
+
+# 1. The install reads its config from the repo.
+New-Item -ItemType Junction -Path "$install\portable_config" -Target "$repo\portable_config"
+
+# 2. Thumbfast helper: the seek-bar previews run a standalone mpv.exe that ships in the install,
+#    not in the repo. Link it where thumbfast.conf expects it (portable_config/mpv/mpv.exe).
+New-Item -ItemType Junction -Path "$repo\portable_config\mpv" -Target "$install\mpv"
+```
+
+`portable_config/mpv/` is listed in `.gitignore`, so the link (and the exe behind it) is never committed. Do the second step on every new checkout.
+
+> [!TIP]
+> If seeking shows `thumbfast: ERROR! cannot create mpv subprocess`, the helper link is missing or points at the wrong folder. Check that `portable_config\mpv\mpv.exe` exists.
+
 ### 📣 Support & Contributions:
 - 🐛 Bug Reports & Feature Requests: Please [open an issue](https://github.com/allecsc/Stremio-Kai/issues) on GitHub
 - 💬 Feedback Welcome: Suggestions that improve usability or performance are appreciated

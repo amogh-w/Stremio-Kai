@@ -101,6 +101,53 @@
     if (e.target.closest("[data-menu-close]")) e.target.closest("[popover]").hidePopover();
   });
 
+  /* Bottom sheets: drag the .sheet-grip (grabber and title row) down to dismiss, or pull down from the top of
+     scrolled content. Past 30% of the height, or a quick flick, closes it; otherwise it springs back. */
+  const sheetDrag = (d) => {
+    const SCRIM = 55; // matches the default --scrim in kit.css
+    let y0 = 0, t0 = 0, dy = 0, active = false, pull = false;
+    const reset = () => {
+      d.style.transition = "";
+      d.style.transform = "";
+      d.style.removeProperty("--scrim");
+    };
+    const move = (v) => {
+      dy = Math.max(0, v);
+      d.style.transition = "none";
+      d.style.transform = `translateY(${dy}px)`;
+      d.style.setProperty("--scrim", Math.max(0, SCRIM * (1 - dy / d.offsetHeight)) + "%");
+    };
+    const finish = () => {
+      const fast = dy / Math.max(1, performance.now() - t0) > 0.6;
+      active = false;
+      if (dy > d.offsetHeight * 0.3 || (fast && dy > 40)) {
+        d.style.transition = "transform .25s var(--ease)";
+        d.style.transform = "translateY(100%)";
+        setTimeout(() => { d.close(); reset(); }, 230);
+      } else {
+        reset();
+      }
+    };
+    $$(".sheet-grip", d).forEach((g) => {
+      g.addEventListener("pointerdown", (e) => { active = true; y0 = e.clientY; t0 = performance.now(); dy = 0; g.setPointerCapture(e.pointerId); });
+      g.addEventListener("pointermove", (e) => { if (active) move(e.clientY - y0); });
+      g.addEventListener("pointerup", () => { if (active) finish(); });
+      g.addEventListener("pointercancel", () => { if (active) finish(); });
+    });
+    d.addEventListener("touchstart", (e) => {
+      pull = d.scrollTop <= 0 && !e.target.closest(".sheet-grip");
+      if (pull) { y0 = e.touches[0].clientY; t0 = performance.now(); dy = 0; }
+    }, { passive: true });
+    d.addEventListener("touchmove", (e) => {
+      if (!pull) return;
+      const m = e.touches[0].clientY - y0;
+      if (m > 8 && d.scrollTop <= 0) { active = true; move(m); e.preventDefault(); }
+      else if (!active && m < 0) pull = false;
+    }, { passive: false });
+    d.addEventListener("touchend", () => { if (active && pull) finish(); pull = false; });
+  };
+  $$("dialog.sheet").forEach(sheetDrag);
+
   icons();
-  window.UI = { icon, icons, toast };
+  window.UI = { icon, icons, toast, sheetDrag };
 })();

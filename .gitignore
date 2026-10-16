@@ -7,3 +7,6 @@ spike-capture.jsonl
 portable_config/cache/
 portable_config/scripts/smart-track-selector/track_preferences.json
 remote/web/node_modules/
+
+# Local junction to the install's standalone mpv.exe (thumbfast helper)
+portable_config/mpv/
