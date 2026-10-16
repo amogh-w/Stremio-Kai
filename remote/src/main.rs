@@ -1,0 +1,52 @@
+//! Kai Remote daemon: relays between the bridge webmod (loopback) and phone clients (LAN, token).
+mod auth;
+mod protocol;
+mod relay;
+
+use axum::{
+    extract::{ws::WebSocketUpgrade, State},
+    middleware,
+    response::{Html, IntoResponse},
+    routing::get,
+    Router,
+};
+use std::{net::SocketAddr, sync::Arc};
+
+const PORT: u16 = 8765;
+const INDEX: &str = include_str!("../web/index.html");
+
+async fn index() -> Html<&'static str> {
+    Html(INDEX)
+}
+
+async fn bridge_ws(State(app): State<Arc<relay::App>>, ws: WebSocketUpgrade) -> impl IntoResponse {
+    ws.on_upgrade(move |s| relay::bridge(app, s))
+}
+
+async fn phone_ws(State(app): State<Arc<relay::App>>, ws: WebSocketUpgrade) -> impl IntoResponse {
+    ws.on_upgrade(move |s| relay::phone(app, s))
+}
+
+fn print_pairing(token: &str) {
+    let ip = local_ip_address::local_ip().map(|i| i.to_string()).unwrap_or_else(|_| "127.0.0.1".into());
+    let url = format!("http://{ip}:{PORT}/?t={token}");
+    println!("\nKai Remote listening on 0.0.0.0:{PORT}\nPair your phone: {url}\n");
+    if let Ok(code) = qrcode::QrCode::new(url.as_bytes()) {
+        use qrcode::render::unicode::Dense1x2;
+        println!("{}", code.render::<Dense1x2>().quiet_zone(true).build());
+    }
+}
+
+#[tokio::main]
+async fn main() {
+    let app = Arc::new(relay::App::new(auth::load_or_create_token()));
+    print_pairing(&app.token);
+    let router = Router::new()
+        .route("/", get(index))
+        .route("/bridge", get(bridge_ws))
+        .route("/ws/phone", get(phone_ws))
+        .layer(middleware::from_fn_with_state(app.clone(), auth::guard))
+        .with_state(app);
+    let l = tokio::net::TcpListener::bind(("0.0.0.0", PORT)).await.expect("bind port");
+    axum::serve(l, router.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
+}

@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#11111b">
+<title>Kai Remote</title>
+<style>
+:root{--bg:#11111b;--card:#1e1e2e;--card2:#313244;--text:#cdd6f4;--dim:#9399b2;--accent:#cba6f7;--ok:#a6e3a1;--bad:#f38ba8}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 system-ui,sans-serif;overscroll-behavior:none}
+body{min-height:100dvh;padding:0 16px calc(76px + env(safe-area-inset-bottom))}
+#backdrop{position:fixed;inset:0;z-index:-1;background:center/cover;filter:blur(28px) brightness(.35);transform:scale(1.15);transition:opacity .4s;opacity:0}
+header{display:flex;align-items:center;gap:8px;padding:14px 0 6px;color:var(--dim);font-size:13px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--bad)}.dot.on{background:var(--ok)}
+.card{background:color-mix(in srgb,var(--card) 88%,transparent);border-radius:16px;padding:14px;margin:12px 0}
+h1{font-size:19px;margin:0 0 2px}.sub{color:var(--dim);font-size:14px}
+.art{display:flex;gap:12px;align-items:center}.art img{height:84px;border-radius:8px;background:var(--card2)}
+.logo{max-height:48px;max-width:70%;margin-bottom:6px}
+button{font:inherit;color:var(--text);background:var(--card2);border:0;border-radius:12px;min-height:48px;padding:0 14px}
+button:active{background:var(--accent);color:#11111b}
+.row{display:flex;gap:8px;margin:8px 0}.row>*{flex:1}
+.play{font-size:26px;min-height:64px;background:var(--accent);color:#11111b}
+input[type=range]{width:100%;accent-color:var(--accent);height:32px}
+.times{display:flex;justify-content:space-between;color:var(--dim);font-size:13px;font-variant-numeric:tabular-nums}
+select{width:100%;font:inherit;color:var(--text);background:var(--card2);border:0;border-radius:12px;min-height:46px;padding:0 10px}
+label{display:block;color:var(--dim);font-size:12px;margin:10px 0 4px}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;margin:12px auto}
+.pad button{min-height:72px;font-size:24px}
+.pages{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;gap:8px;padding:8px 16px calc(8px + env(safe-area-inset-bottom));background:var(--bg)}
+nav button{flex:1}nav button.on{background:var(--accent);color:#11111b}
+.hide{display:none}.toast{position:fixed;left:16px;right:16px;top:12px;background:var(--bad);color:#11111b;border-radius:12px;padding:10px 14px;display:none}
+#off{text-align:center;color:var(--dim);padding:28px 8px}
+</style>
+</head>
+<body>
+<div id="backdrop"></div>
+<div class="toast" id="toast"></div>
+<header><span class="dot" id="dot"></span><span id="status">Connecting...</span></header>
+
+<section id="tab-play">
+  <div id="off" class="card hide">Stremio is not connected, or nothing is playing.<br>Use the Navigate tab to open something.</div>
+  <div id="player" class="hide">
+    <div class="card">
+      <div class="art"><img id="poster" alt="" hidden><div><img id="logo" class="logo" alt="" hidden><h1 id="title"></h1><div class="sub" id="ep"></div></div></div>
+    </div>
+    <div class="card">
+      <input type="range" id="seek" min="0" max="1" step="1" value="0">
+      <div class="times"><span id="cur">0:00</span><span id="dur">0:00</span></div>
+      <div class="row"><button data-seek="-30">-30</button><button data-seek="-10">-10</button><button data-seek="10">+10</button><button data-seek="30">+30</button></div>
+      <div class="row"><button class="play" id="pp">&#9654;</button></div>
+      <div class="row"><button id="skip">Skip intro</button><button id="next">Next episode</button></div>
+    </div>
+    <div class="card">
+      <div class="row" style="align-items:center"><button id="mute" style="flex:0 0 64px">&#128266;</button><input type="range" id="vol" min="0" max="100" step="1"></div>
+      <label>Speed</label><select id="speed"></select>
+      <label>Audio</label><select id="aid"></select>
+      <label>Subtitles</label><select id="sid"></select>
+      <div class="row" style="align-items:center"><button data-delay="-0.1">-0.1s</button><div class="sub" id="delay" style="text-align:center">delay 0.0s</div><button data-delay="0.1">+0.1s</button></div>
+    </div>
+  </div>
+</section>
+
+<section id="tab-nav" class="hide">
+  <div class="card">
+    <div class="pad">
+      <span></span><button data-key="ArrowUp">&#9650;</button><span></span>
+      <button data-key="ArrowLeft">&#9664;</button><button id="ok">OK</button><button data-key="ArrowRight">&#9654;</button>
+      <button id="back">&#8617;</button><button data-key="ArrowDown">&#9660;</button><button data-key="Escape">Esc</button>
+    </div>
+  </div>
+  <div class="card pages">
+    <button data-hash="#/">Home</button><button data-hash="#/discover">Discover</button><button data-hash="#/library">Library</button>
+    <button data-hash="#/calendar">Calendar</button><button data-hash="#/addons">Add-ons</button><button data-hash="#/settings">Settings</button>
+  </div>
+</section>
+
+<nav><button id="n-play" class="on">Playing</button><button id="n-nav">Navigate</button></nav>
+
+<script>
+"use strict";
+const $=(id)=>document.getElementById(id);
+const S={props:{},now:null,bridge:false,ws:null,dragging:false};
+const send=(o)=>{ if(S.ws&&S.ws.readyState===1) S.ws.send(JSON.stringify(o)); if(navigator.vibrate) navigator.vibrate(8); };
+
+const fmt=(s)=>{ s=Math.max(0,Math.floor(s||0)); const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;
+  return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0"); };
+const off=(v)=>v===false||v==null||v==="no"||v==="false";
+
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.style.display="block"; clearTimeout(toast.h); toast.h=setTimeout(()=>t.style.display="none",3500); }
+
+function fillSelect(sel, items, current){
+  const sig=JSON.stringify(items); if(sel.dataset.sig!==sig){ sel.dataset.sig=sig; sel.innerHTML=""; for(const [v,l] of items){ const o=document.createElement("option"); o.value=v; o.textContent=l; sel.appendChild(o); } }
+  sel.value=current;
+}
+const label=(t)=>[t.lang&&t.lang.toUpperCase(),t.title,t.codec].filter(Boolean).join(" - ")||("Track "+t.id);
+
+function render(){
+  const p=S.props, playing=S.bridge && p.duration!=null;
+  $("dot").classList.toggle("on",S.bridge);
+  $("status").textContent=S.bridge?"Connected to Stremio":(S.ws&&S.ws.readyState===1?"Waiting for Stremio...":"Connecting...");
+  $("off").classList.toggle("hide",playing); $("player").classList.toggle("hide",!playing);
+  const n=S.now;
+  $("title").textContent=n?(n.name||n.title||""):"";
+  $("ep").textContent=n&&n.season!=null?`S${n.season} E${n.episode}${n.title&&n.title!==n.name?" - "+n.title.replace(/^.* - /,""):""}`:"";
+  const setImg=(el,src)=>{ if(src){ if(el.src!==src) el.src=src; el.hidden=false; } else el.hidden=true; };
+  setImg($("poster"),n&&n.poster); setImg($("logo"),n&&n.logo);
+  const bg=$("backdrop"); const b=n&&n.background; bg.style.backgroundImage=b?`url("${b}")`:""; bg.style.opacity=b?1:0;
+  if(!playing) return;
+  const dur=p.duration||0;
+  if(!S.dragging){ $("seek").max=Math.max(1,Math.floor(dur)); $("seek").value=Math.floor(p["time-pos"]||0); $("cur").textContent=fmt(p["time-pos"]); }
+  $("dur").textContent=fmt(dur);
+  $("pp").innerHTML=p.pause?"&#9654;":"&#10074;&#10074;";
+  $("mute").innerHTML=p.mute===true||p.mute==="yes"?"&#128263;":"&#128266;";
+  if(document.activeElement!==$("vol")) $("vol").value=p.volume??100;
+  fillSelect($("speed"),[0.5,0.75,1,1.25,1.5,1.75,2].map(v=>[v,v+"x"]),String(p.speed??1));
+  const tr=Array.isArray(p["track-list"])?p["track-list"]:[];
+  fillSelect($("aid"),tr.filter(t=>t.type==="audio").map(t=>[String(t.id),label(t)]),String(p.aid));
+  fillSelect($("sid"),[["no","Off"],...tr.filter(t=>t.type==="sub").map(t=>[String(t.id),label(t)])],off(p.sid)?"no":String(p.sid));
+  $("delay").textContent="delay "+(p["sub-delay"]||0).toFixed(1)+"s";
+  $("next").hidden=!(n&&n.next);
+}
+
+function connect(){
+  const ws=new WebSocket((location.protocol==="https:"?"wss://":"ws://")+location.host+"/ws/phone"); S.ws=ws;
+  ws.onmessage=(ev)=>{ const m=JSON.parse(ev.data);
+    if(m.k==="snapshot"){ S.props=m.props||{}; S.now=m.now||null; S.bridge=!!m.bridge; }
+    else if(m.k==="prop") S.props[m.name]=m.data;
+    else if(m.k==="now") S.now=m.now;
+    else if(m.k==="bridge"){ S.bridge=m.up; if(!m.up){ S.props={}; S.now=null; } }
+    else if(m.k==="blocked") toast("Stremio blocked that action ("+(m.what||"command")+")");
+    render(); };
+  ws.onopen=render;
+  ws.onclose=()=>{ S.bridge=false; render(); setTimeout(connect,1500); };
+}
+
+document.addEventListener("click",(e)=>{
+  const b=e.target.closest("button"); if(!b) return;
+  const d=b.dataset;
+  if(d.seek) send({cmd:"seek",s:Math.max(0,(S.props["time-pos"]||0)+Number(d.seek))});
+  else if(d.delay) send({cmd:"subdelay",s:Math.round(((S.props["sub-delay"]||0)+Number(d.delay))*10)/10});
+  else if(d.key) send({cmd:"key",key:d.key});
+  else if(d.hash) send({cmd:"hash",h:d.hash});
+});
+$("pp").onclick=()=>send({cmd:"pause",v:!S.props.pause});
+$("mute").onclick=()=>send({cmd:"mute",v:!(S.props.mute===true||S.props.mute==="yes")});
+$("skip").onclick=()=>send({cmd:"skip"}); $("next").onclick=()=>send({cmd:"next"});
+$("ok").onclick=()=>send({cmd:"ok"}); $("back").onclick=()=>send({cmd:"back"});
+$("seek").addEventListener("input",()=>{ S.dragging=true; $("cur").textContent=fmt($("seek").value); });
+$("seek").addEventListener("change",()=>{ S.dragging=false; send({cmd:"seek",s:Number($("seek").value)}); });
+$("vol").addEventListener("input",()=>send({cmd:"volume",v:Number($("vol").value)}));
+$("speed").onchange=()=>send({cmd:"speed",v:Number($("speed").value)});
+$("aid").onchange=()=>send({cmd:"aid",id:$("aid").value});
+$("sid").onchange=()=>send({cmd:"sid",id:$("sid").value});
+function tab(t){ $("tab-play").classList.toggle("hide",t!=="play"); $("tab-nav").classList.toggle("hide",t!=="nav");
+  $("n-play").classList.toggle("on",t==="play"); $("n-nav").classList.toggle("on",t==="nav"); }
+$("n-play").onclick=()=>tab("play"); $("n-nav").onclick=()=>tab("nav");
+connect(); render();
+</script>
+</body>
+</html>
