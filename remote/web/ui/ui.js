@@ -254,6 +254,57 @@
     i.src = url;
   };
 
+  /* UI.confirm({ title, text, ok, cancel, icon, danger }) returns a Promise<boolean>.
+     A centered kit modal: icon, title, one sentence, Cancel and a primary button (red when danger is true).
+     Escape and a click on the backdrop count as Cancel. Use it before actions that are disruptive or hard to undo. */
+  let confirmDlg = null;
+  const confirm = ({ title = "Are you sure?", text = "", ok = "Continue", cancel = "Cancel", icon: iconName = "info", danger = false } = {}) =>
+    new Promise((resolve) => {
+      if (!confirmDlg) {
+        confirmDlg = document.createElement("dialog");
+        confirmDlg.className = "modal";
+        confirmDlg.setAttribute("aria-labelledby", "ui-confirm-title");
+        confirmDlg.innerHTML =
+          '<div class="p-5 outline-none" tabindex="-1" autofocus>' +
+          '<div data-c="icon" class="mx-auto mb-3 grid size-12 place-items-center rounded-full"></div>' +
+          '<h2 id="ui-confirm-title" data-c="title" class="t-title3 text-center"></h2>' +
+          '<p data-c="text" class="t-sub mt-1.5 text-center text-subtext1"></p>' +
+          '<div class="mt-5 flex gap-3"><button data-c="cancel" class="btn btn-gray flex-1"></button><button data-c="ok" class="btn flex-1"></button></div>' +
+          "</div>";
+        document.body.appendChild(confirmDlg);
+      }
+      const d = confirmDlg, q = (k) => d.querySelector('[data-c="' + k + '"]');
+      if (d.open) return resolve(false);
+      const ic = q("icon");
+      ic.className = "mx-auto mb-3 grid size-12 place-items-center rounded-full " + (danger ? "bg-red/15 text-red" : "bg-accent/15 text-accent");
+      ic.replaceChildren(icon(iconName, "size-6"));
+      q("title").textContent = title;
+      q("text").textContent = text;
+      q("text").hidden = !text;
+      q("cancel").textContent = cancel;
+      const okBtn = q("ok");
+      okBtn.textContent = ok;
+      okBtn.className = "btn flex-1 " + (danger ? "btn-danger" : "btn-filled");
+      // Answer the moment a button is tapped. Do NOT wait for the dialog's "close" event: it only fires after the exit
+      // animation (0.3 to 0.8 s), which makes the action feel laggy, and a late one from the previous dialog could cancel
+      // the next. Escape ("cancel") and a backdrop click answer at once too, so every way of dismissing is covered.
+      let settled = false;
+      const settle = (v) => {
+        if (settled) return;
+        settled = true;
+        d.removeEventListener("cancel", onCancel);
+        d.removeEventListener("click", onBackdrop);
+        resolve(v);
+      };
+      const onCancel = () => settle(false);
+      const onBackdrop = (e) => { if (e.target === d) settle(false); };
+      d.addEventListener("cancel", onCancel);
+      d.addEventListener("click", onBackdrop);
+      q("cancel").onclick = () => { settle(false); d.close(); };
+      okBtn.onclick = () => { settle(true); d.close(); };
+      d.showModal();
+    });
+
   icons();
-  window.UI = { icon, icons, toast, sheetDrag, play, reveal, loadBg };
+  window.UI = { icon, icons, toast, sheetDrag, play, reveal, loadBg, confirm };
 })();

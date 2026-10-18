@@ -79,7 +79,27 @@
 </section>
 
 <section id="tab-play" hidden>
-  <div id="off" hidden class="card my-3 px-2 py-7 text-center text-subtext0">Stremio is not connected, or nothing is playing.<br>Use the Navigate tab to open something.</div>
+  <div id="off" hidden class="my-3">
+    <!-- Stremio is not reachable -->
+    <div id="offConn" hidden class="card flex flex-col items-center px-4 py-10 text-center">
+      <span class="spin-ring mb-4"></span>
+      <div class="t-headline">Waiting for Stremio</div>
+      <div class="t-sub mt-1 text-subtext0">Make sure Stremio Kai is running on the PC. This page reconnects by itself.</div>
+    </div>
+    <!-- Connected, nothing playing: one tap to resume, or browse -->
+    <div id="offIdle" hidden>
+      <div class="card px-4 py-8 text-center">
+        <div class="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-accent/15 text-accent"><svg class="size-7 shrink-0" aria-hidden="true"><use href="/icons.svg#circle-play"/></svg></div>
+        <div class="t-title3">Nothing playing</div>
+        <div class="t-sub mt-1 text-subtext0">Pick something to watch, or carry on where you left off.</div>
+        <div class="mt-5 flex flex-col gap-2.5">
+          <button id="offResume" hidden class="btn btn-filled btn-lg btn-block"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#play"/></svg><span id="offResumeText" class="min-w-0 truncate"></span></button>
+          <button id="offHome" class="btn btn-gray btn-block"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#house"/></svg>Browse Home</button>
+        </div>
+      </div>
+      <div id="offCw"></div>
+    </div>
+  </div>
   <div id="player" hidden>
 
     <!-- Now playing: art header -->
@@ -87,6 +107,7 @@
       <div class="skel absolute inset-0 !rounded-none"></div>
       <div id="npBg" class="absolute inset-0 bg-cover bg-center"></div>
       <div class="absolute inset-0 bg-linear-to-t from-base/95 via-base/30 to-transparent"></div>
+      <button id="stopBtn" class="btn btn-sm btn-capsule btn-gray absolute top-3 right-3" aria-label="Stop playing"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#square"/></svg>Stop</button>
       <div class="absolute inset-x-3.5 bottom-3">
         <img id="logo" alt="" hidden class="mb-1.5 block max-h-14 max-w-[65%]">
         <h1 id="title" class="t-title2"></h1>
@@ -186,21 +207,47 @@
 </section>
 
 <section id="tab-nav" hidden>
-  <div class="card my-3 grid grid-cols-3 gap-2">
-    <button class="btn btn-gray" data-hash="#/"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#house"/></svg>Home</button>
-    <button class="btn btn-gray" data-hash="#/discover"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#compass"/></svg>Discover</button>
-    <button class="btn btn-gray" data-hash="#/library"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#library"/></svg>Library</button>
-    <button class="btn btn-gray" data-hash="#/calendar"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#calendar"/></svg>Calendar</button>
-    <button class="btn btn-gray" data-hash="#/addons"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#puzzle"/></svg>Add-ons</button>
-    <button class="btn btn-gray" data-hash="#/settings"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#settings"/></svg>Settings</button>
+  <div class="t-foot mt-3 mb-1.5 px-1 text-subtext0 uppercase tracking-wide">Open on the PC</div>
+  <div class="group-list">
+      <button class="row w-full text-left" data-hash="#/" data-nav="#/">
+        <div class="row-tile bg-blue"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#house"/></svg></div>
+        <div class="min-w-0 flex-1"><div data-nt class="t-body">Home</div><div class="t-cap text-subtext0">Your board and what to watch</div></div>
+        <span data-here hidden class="text-accent"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#check"/></svg></span><span data-chev class="text-overlay1"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-right"/></svg></span>
+      </button>
+      <button class="row w-full text-left" data-hash="#/discover" data-nav="#/discover">
+        <div class="row-tile bg-mauve"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#telescope"/></svg></div>
+        <div class="min-w-0 flex-1"><div data-nt class="t-body">Discover</div><div class="t-cap text-subtext0">Browse catalogs and genres</div></div>
+        <span data-here hidden class="text-accent"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#check"/></svg></span><span data-chev class="text-overlay1"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-right"/></svg></span>
+      </button>
+      <button class="row w-full text-left" data-hash="#/library" data-nav="#/library">
+        <div class="row-tile bg-peach"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#library"/></svg></div>
+        <div class="min-w-0 flex-1"><div data-nt class="t-body">Library</div><div class="t-cap text-subtext0">Everything you have saved</div></div>
+        <span data-here hidden class="text-accent"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#check"/></svg></span><span data-chev class="text-overlay1"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-right"/></svg></span>
+      </button>
+      <button class="row w-full text-left" data-hash="#/calendar" data-nav="#/calendar">
+        <div class="row-tile bg-red"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#calendar"/></svg></div>
+        <div class="min-w-0 flex-1"><div data-nt class="t-body">Calendar</div><div class="t-cap text-subtext0">Upcoming episodes and releases</div></div>
+        <span data-here hidden class="text-accent"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#check"/></svg></span><span data-chev class="text-overlay1"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-right"/></svg></span>
+      </button>
+      <button class="row w-full text-left" data-hash="#/addons" data-nav="#/addons">
+        <div class="row-tile bg-green"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#puzzle"/></svg></div>
+        <div class="min-w-0 flex-1"><div data-nt class="t-body">Add-ons</div><div class="t-cap text-subtext0">Catalogs and stream sources</div></div>
+        <span data-here hidden class="text-accent"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#check"/></svg></span><span data-chev class="text-overlay1"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-right"/></svg></span>
+      </button>
+      <button class="row w-full text-left" data-hash="#/settings" data-nav="#/settings">
+        <div class="row-tile bg-teal"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#settings"/></svg></div>
+        <div class="min-w-0 flex-1"><div data-nt class="t-body">Settings</div><div class="t-cap text-subtext0">Stremio's own settings</div></div>
+        <span data-here hidden class="text-accent"><svg class="size-5 shrink-0" aria-hidden="true"><use href="/icons.svg#check"/></svg></span><span data-chev class="text-overlay1"><svg class="size-4 shrink-0" aria-hidden="true"><use href="/icons.svg#chevron-right"/></svg></span>
+      </button>
   </div>
+  <p class="t-cap mt-2 px-1 text-subtext0">The page you are on is marked. If something is playing, you are asked before it stops.</p>
 </section>
 
 <nav class="tabbar fixed inset-x-0 bottom-0 z-40 mx-auto max-w-[480px] pb-[calc(12px+env(safe-area-inset-bottom))]">
   <button id="n-home" class="tab" aria-selected="true"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#house"/></svg>Home</button>
   <button id="n-play" class="tab" aria-selected="false"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#circle-play"/></svg>Playing</button>
   <button id="n-fx" class="tab" aria-selected="false"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#wand-sparkles"/></svg>Enhance</button>
-  <button id="n-nav" class="tab" aria-selected="false"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#gamepad-2"/></svg>Navigate</button>
+  <button id="n-nav" class="tab" aria-selected="false"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#compass"/></svg>Navigate</button>
 </nav>
 
 
@@ -276,19 +323,6 @@
   </div>
 </dialog>
 
-<dialog id="d-eps" class="modal">
-  <!-- tabindex + autofocus keeps the first-focus ring off the buttons when the dialog opens -->
-  <div class="p-5 outline-none" tabindex="-1" autofocus>
-    <div class="mx-auto mb-3 grid size-12 place-items-center rounded-full bg-accent/15 text-accent"><svg class="size-6 shrink-0" aria-hidden="true"><use href="/icons.svg#list-video"/></svg></div>
-    <h2 id="epsTitle" class="t-title3 text-center"></h2>
-    <p id="epsText" class="t-sub mt-1.5 text-center text-subtext1"></p>
-    <div class="mt-5 flex gap-3">
-      <button class="btn btn-gray flex-1" data-close>Cancel</button>
-      <button id="epsGo" class="btn btn-filled flex-1" data-close>Open show</button>
-    </div>
-  </div>
-</dialog>
-
 <script src="/ui.js"></script>
 <script>
 "use strict";
@@ -327,6 +361,7 @@ function render(){
   $("dot").classList.toggle("is-on",S.bridge); $("dot").classList.toggle("animate-pulse",!S.bridge); $("cfgStatus").textContent=S.bridge?"Connected":"Waiting";
   $("status").textContent=S.bridge?"Connected to Stremio":(S.ws&&S.ws.readyState===1?"Waiting for Stremio...":"Connecting...");
   $("off").hidden=playing; $("player").hidden=!playing;
+  if(!playing) renderIdle();
   const n=S.now;
   $("title").textContent=n?(n.name||n.title||""):"";
   $("ep").textContent=n&&n.season!=null?`S${n.season} E${n.episode}${n.title&&n.title!==n.name?" - "+n.title.replace(/^.* - /,""):""}`:"";
@@ -334,6 +369,7 @@ function render(){
   setImg($("logo"),n&&img(n.logo,400)); $("title").hidden=!!(n&&n.logo); const nb=n&&n.background; bgLoad($("npBg"),nb?img(nb,900):"");
   const bg=$("backdrop"); const b=n&&n.background; bg.style.backgroundImage=b?`url("${img(b,900)}")`:""; bg.style.opacity=(b&&cfg.backdrop)?0.3:0;
   $("epsGroup").hidden=!(n&&n.type==="series"&&n.id);
+  renderNav();
   if(S.tab==="fx") renderFx();
   if(!playing) return;
   const dur=p.duration||0;
@@ -476,20 +512,24 @@ function connect(){
   ws.onclose=()=>{ S.bridge=false; render(); setTimeout(connect,1500); };
 }
 
-document.addEventListener("click",(e)=>{
+document.addEventListener("click",async(e)=>{
   const b=e.target.closest("button"); if(!b) return;
   const d=b.dataset;
   if(d.seek) send({cmd:"seek",s:Math.max(0,(S.props["time-pos"]||0)+Number(d.seek))});
   else if(d.delay) send({cmd:"subdelay",s:Math.round(((S.props["sub-delay"]||0)+Number(d.delay))*10)/10});
   else if(d.key) send({cmd:"key",key:d.key});
-  else if(d.hash) send({cmd:"hash",h:d.hash});
+  else if(d.hash){ if(await leavePlayer("Opening that page leaves the player.")) send({cmd:"hash",h:d.hash}); }
   else if(d.flavor){ store.set("ui-flavor",d.flavor); applyTheme(); }
   else if(d.accent){ store.set("ui-accent",d.accent); applyTheme(); }
   else if(d.radius){ store.set("ui-radius",d.radius); applyTheme(); }
 });
 $("pp").onclick=()=>send({cmd:"pause",v:!S.props.pause});
 $("mute").onclick=()=>send({cmd:"mute",v:!(S.props.mute===true||S.props.mute==="yes")});
-$("skip").onclick=()=>send({cmd:"skip"}); $("next").onclick=()=>send({cmd:"next"});
+$("skip").onclick=()=>send({cmd:"skip"}); $("next").onclick=async()=>{
+  const nx=S.now&&S.now.next;
+  const what=nx&&nx.season!=null?"S"+nx.season+" E"+nx.episode+(nx.title?" \u201c"+nx.title+"\u201d":""):"The next episode";
+  if(await UI.confirm({icon:"skip-forward",title:"Play the next episode?",text:what+" starts now and the current episode stops.",ok:"Play next"})) send({cmd:"next"});
+};
 $("seek").addEventListener("input",()=>{ S.dragging=true; $("cur").textContent=fmt($("seek").value); });
 $("seek").addEventListener("change",()=>{ S.dragging=false; send({cmd:"seek",s:Number($("seek").value)}); });
 $("vol").addEventListener("input",()=>{ send({cmd:"volume",v:Number($("vol").value)}); $("volVal").textContent=$("vol").value+"%"; });
@@ -498,16 +538,11 @@ $("aid").onchange=()=>send({cmd:"aid",id:$("aid").value});
 $("sid").onchange=()=>send({cmd:"sid",id:$("sid").value});
 function tab(t){ const prev=S.tab; S.tab=t; renderDetail(); if(t==="fx") renderFx(); for(const x of ["home","play","fx","nav"]){ $("tab-"+x).hidden=t!==x; $("n-"+x).setAttribute("aria-selected",t===x); } if(prev!==t) UI.play($("tab-"+t),"fade",".25s"); }
 $("n-home").onclick=()=>{ if(S.tab==="home"&&onDetailRoute()) send({cmd:"hash",h:"#/"}); tab("home"); }; $("n-play").onclick=()=>tab("play"); $("n-fx").onclick=()=>tab("fx"); $("n-nav").onclick=()=>tab("nav");
-/* Episodes: opening the show page leaves the player, so say so first (kit alert dialog). */
-$("epsBtn").onclick=()=>{
+/* Episodes: opening the show page leaves the player, so say so first. */
+$("epsBtn").onclick=async()=>{
   const n=S.now; if(!(n&&n.type==="series"&&n.id)) return;
   const ep=n.season!=null&&n.episode!=null?"S"+n.season+" E"+n.episode:"This episode";
-  $("epsTitle").textContent="Leave \u201c"+(n.name||"this show")+"\u201d?";
-  $("epsText").textContent=ep+" will stop. Home opens on the show so you can pick an episode and a stream. Continue Watching brings you back here.";
-  $("d-eps").showModal();
-};
-$("epsGo").onclick=()=>{
-  const n=S.now; if(!(n&&n.type==="series"&&n.id)) return;
+  if(!await UI.confirm({icon:"list-video",title:"Leave \u201c"+(n.name||"this show")+"\u201d?",text:ep+" will stop. Home opens on the show so you can pick an episode and a stream. Continue Watching brings you back here.",ok:"Open show"})) return;
   send({cmd:"open",ref:"detail:"+encodeURIComponent(n.type)+"/"+encodeURIComponent(n.id)});
   UI.toast("Opening the show page...","info");
 };
@@ -522,8 +557,13 @@ function pactBusy(action,on){
 }
 let urlRid=null;
 const newRid=()=>Array.from(crypto.getRandomValues(new Uint8Array(16)),(b)=>b.toString(16).padStart(2,"0")).join("");
-document.addEventListener("click",(e)=>{
+const PACT_CONFIRM={
+  download:{icon:"download",title:"Download this video?",text:"Starts a download on the PC. Large files can use a lot of disk space and bandwidth.",ok:"Download"},
+  vlc:{icon:"traffic-cone",title:"Open in VLC?",text:"Pauses here and opens the video in VLC on the PC. VLC has to be installed there.",ok:"Open VLC"},
+};
+document.addEventListener("click",async(e)=>{
   const b=e.target.closest("[data-pact]"); if(!b) return;
+  if(PACT_CONFIRM[b.dataset.pact]&&!await UI.confirm(PACT_CONFIRM[b.dataset.pact])) return;
   pactBusy(b.dataset.pact,true);
   if(b.dataset.pact==="url"){ urlRid=newRid(); send({cmd:"more",action:"url",rid:urlRid}); return; }
   send({cmd:"more",action:b.dataset.pact});
@@ -538,7 +578,50 @@ async function copyField(ta){
   try{ return document.execCommand("copy"); }catch(e){ return false; }
 }
 $("urlCopy").onclick=async()=>{ const ok=await copyField($("urlText")); UI.toast(ok?"Copied to this phone":"Select the text and copy it manually",ok?"success":"info"); };
-function opened(ref){ send({cmd:"open",ref}); UI.toast("Opening on the TV...","info"); }
+/* Stopping = leaving the player to Home, like the PC's own back button: Stremio saves the progress and releases the player. */
+async function stopPlayback(){ send({cmd:"hash",h:"#/"}); await sleep(350); }
+/* While the PC is in the player, anything that navigates elsewhere stops the stream. Ask first, naming what stops;
+   on yes, stop it properly (to Home) before moving on, so the next thing starts from a clean player. */
+async function leavePlayer(what){
+  if(S.route!=="#/player") return true;
+  const n=S.now, name=n&&(n.name||n.title)||"the current video";
+  if(!await UI.confirm({icon:"triangle-alert",title:"Stop \u201c"+name+"\u201d?",text:what+" Playback stops first and Home opens.",ok:"Stop and go"})) return false;
+  await stopPlayback();
+  return true;
+}
+async function opened(ref){
+  if(!await leavePlayer("Opening this title leaves the player.")) return;
+  send({cmd:"open",ref}); UI.toast("Opening on the TV...","info");
+}
+$("stopBtn").onclick=async()=>{
+  const n=S.now, name=n&&(n.name||n.title)||"This video";
+  if(!await UI.confirm({icon:"square",title:"Stop playing?",text:"\u201c"+name+"\u201d stops and the PC goes back to Home. Continue Watching picks up where you left off.",ok:"Stop"})) return;
+  await stopPlayback(); tab("home"); UI.toast("Stopped","info");
+};
+
+/* Playing tab with nothing playing: resume in one tap, browse, or pick from Continue Watching. */
+/* Navigate tab: mark the page the PC is on (the route without its query string; "" means Home). */
+function renderNav(){
+  const here=(S.route||"#/").split("?")[0];
+  document.querySelectorAll("[data-nav]").forEach((r)=>{
+    const on=r.dataset.nav===here;
+    r.querySelector("[data-nt]").classList.toggle("text-accent",on);
+    r.querySelector("[data-here]").hidden=!on; r.querySelector("[data-chev]").hidden=on;
+  });
+}
+function renderIdle(){
+  $("offConn").hidden=S.bridge; $("offIdle").hidden=!S.bridge;
+  if(!S.bridge) return;
+  const cw=(S.home&&S.home.cw)||[];
+  const sig=JSON.stringify(cw.map(i=>[i.ref,Math.round(i.progress)]));
+  const box=$("offCw");
+  if(box.dataset.sig!==sig){ box.dataset.sig=sig; box.innerHTML=""; if(cw.length) box.appendChild(section("Continue watching",cw,(i,ix)=>tile(i,{progress:i.progress,label:i.label},ix))); }
+  const first=cw[0]; $("offResume").hidden=!first;
+  if(first) $("offResumeText").textContent="Resume \u201c"+first.name+"\u201d"+(first.label?" \u00b7 "+first.label:"");
+}
+$("offHome").onclick=()=>tab("home");
+$("offResume").onclick=()=>{ const f=S.home&&S.home.cw&&S.home.cw[0]; if(f) opened(f.ref); };
+$("offCw").addEventListener("click",(e)=>{ const t=e.target.closest("[data-ref]"); if(t) opened(t.dataset.ref); });
 $("dBack").onclick=()=>send({cmd:"back"});
 $("dDesc").onclick=()=>$("dDesc").classList.toggle("is-on");
 $("dEps").addEventListener("click",(e)=>{
@@ -550,11 +633,9 @@ $("dStreams").addEventListener("click",(e)=>{
   send({cmd:"play",idx:Number(b.dataset.idx),rev:S.rev}); UI.toast("Starting...","info");
 });
 $("hero").onclick=()=>opened($("hero").dataset.ref);
-let lp=null,lpFired=false;
-$("homeRows").addEventListener("touchstart",(e)=>{ const t=e.target.closest("[data-ref]"); lpFired=false; clearTimeout(lp);
-  if(t&&t.dataset.more) lp=setTimeout(()=>{ lpFired=true; buzz(20); opened(t.dataset.more); },550); },{passive:true});
-["touchend","touchmove","touchcancel"].forEach(ev=>$("homeRows").addEventListener(ev,()=>clearTimeout(lp),{passive:true}));
-$("homeRows").addEventListener("click",(e)=>{ const t=e.target.closest("[data-ref]"); if(!t) return; if(lpFired){ lpFired=false; return; } opened(t.dataset.ref); });
+/* Home: every poster, Continue Watching included, opens its details page. A Continue Watching tile carries the
+   show page (last episode, streams ready) in data-more and the direct resume in data-ref; Home uses data-more. */
+$("homeRows").addEventListener("click",(e)=>{ const t=e.target.closest("[data-ref]"); if(t) opened(t.dataset.more||t.dataset.ref); });
 let tx=0; $("hero").addEventListener("touchstart",(e)=>{ tx=e.touches[0].clientX; },{passive:true});
 $("hero").addEventListener("touchend",(e)=>{ const dx=e.changedTouches[0].clientX-tx; const n=(S.home&&S.home.hero||[]).length;
   if(Math.abs(dx)>50&&n>1){ S.hero=(S.hero+(dx<0?1:-1)+n)%n; renderHero(); } });
@@ -577,10 +658,8 @@ document.querySelectorAll("[data-skip]").forEach((g)=>g.addEventListener("click"
   const b=e.target.closest("button"); if(!b) return; cfg[g.dataset.skip]=Number(b.dataset.v); saveCfg(); applySkip();
 }));
 $("settingsBtn").addEventListener("click",()=>{ syncSettings(); setTimeout(syncSettings,80); }); /* second pass: segment thumbs need the sheet to be visible */
-let resetArmed=false;
-$("cfgReset").onclick=()=>{
-  const b=$("cfgReset");
-  if(!resetArmed){ resetArmed=true; b.textContent="Tap again to confirm"; setTimeout(()=>{ resetArmed=false; b.textContent="Reset all settings"; },3000); return; }
+$("cfgReset").onclick=async()=>{
+  if(!await UI.confirm({icon:"rotate-ccw",danger:true,title:"Reset all settings?",text:"Theme, skip lengths and every other option on this phone go back to their defaults.",ok:"Reset"})) return;
   ["kai-settings","ui-flavor","ui-accent","ui-radius"].forEach((k)=>{ try{ localStorage.removeItem(k); }catch(e){} });
   location.reload();
 };
@@ -768,14 +847,9 @@ function renderPresets(){
 }
 document.addEventListener("click",(e)=>{ const b=e.target.closest("[data-preset]"); if(b) applyPreset(b.dataset.preset); });
 
-let quitArmed=false;
-document.addEventListener("click",(e)=>{
+document.addEventListener("click",async(e)=>{
   const b=e.target.closest("[data-hk]"); if(!b) return;
-  if(b.dataset.type==="quit"){
-    const s=b.querySelector("[data-s]");
-    if(!quitArmed){ quitArmed=true; s.textContent="Tap again to close Stremio"; s.classList.add("text-red"); setTimeout(()=>{ quitArmed=false; s.classList.remove("text-red"); s.innerHTML="Closes Stremio on the PC &middot; <span class=\"kbd\">q</span>"; },3000); return; }
-    quitArmed=false;
-  }
+  if(b.dataset.type==="quit"&&!await UI.confirm({icon:"power",danger:true,title:"Quit the player?",text:"This closes Stremio on the PC and stops anything playing.",ok:"Quit"})) return;
   send({cmd:"hotkey",key:b.dataset.hk});
   if(b.dataset.type==="action") UI.toast(b.querySelector("[data-t]").textContent,"info");
 });

@@ -75,3 +75,5 @@ list-video
 link
 traffic-cone
 link-2
+square
+telescope
